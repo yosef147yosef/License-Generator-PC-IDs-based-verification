@@ -73,7 +73,38 @@ int main() {
             }
         }
         print_debug_event(de);
-
+        if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
+            de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
+        {
+#if _MODE_64
+        CONTEXT context;
+        GetThreadContext(pi.hThread, &context);
+        ADDR_TYPE currentEip = context.Rip;
+#else
+        WOW64_CONTEXT context;
+        Wow64GetThreadContext(pi.hThread, &context);
+        ADDR_TYPE currentEip = context.Eip;
+        context.EFlags &= ~0x100;  // Clear the trap flag
+#endif
+        ADDR_TYPE cur_virtual_address = currentEip - base_address;
+        for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it) 
+        {
+            if (cur_virtual_address > it->first and cur_virtual_address < it->second)
+            {
+                if (!encrypt_block_with_realloction(cur_virtual_address, it->second - it->first, pi, key, file_fields, currentEip, base_address))
+                {
+                    printf("ERROR coundl decrypt %p ", cur_virtual_address + file_fields.imageBase);
+                }
+                break;
+            }
+        }
+#if _MODE_64
+        SetThreadContext(pi.hThread, &context);
+#else
+        Wow64SetThreadContext(pi.hThread, &context);
+#endif
+        continue_status = DBG_CONTINUE;
+            }
         if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
             de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
         {
@@ -94,116 +125,13 @@ int main() {
             {
 
                 restore_original_byte(pi.hProcess, currentEip);
-                ADDR_TYPE addr_called = NULL;
-#if _MODE_64
-                Register64 reg = identify_call_register(pi.hProcess, currentEip);
-                switch (reg) {
-                case Register64::RAX:
-                    addr_called = context.Rax;
-                    break;
-                case Register64::RCX:
-                    addr_called = context.Rcx;
-                    break;
-                case Register64::RDX:
-                    addr_called = context.Rdx;
-                    break;
-                case Register64::RBX:
-                    addr_called = context.Rbx;
-                    break;
-                case Register64::RSP:
-                    addr_called = context.Rsp;
-                    break;
-                case Register64::RBP:
-                    addr_called = context.Rbp;
-                    break;
-                case Register64::RSI:
-                    addr_called = context.Rsi;
-                    break;
-                case Register64::RDI:
-                    addr_called = context.Rdi;
-                    break;
-                case Register64::R8:
-                    addr_called = context.R8;
-                    break;
-                case Register64::R9:
-                    addr_called = context.R9;
-                    break;
-                case Register64::R10:
-                    addr_called = context.R10;
-                    break;
-                case Register64::R11:
-                    addr_called = context.R11;
-                    break;
-                case Register64::R12:
-                    addr_called = context.R12;
-                    break;
-                case Register64::R13:
-                    addr_called = context.R13;
-                    break;
-                case Register64::R14:
-                    addr_called = context.R14;
-                    break;
-                case Register64::R15:
-                    addr_called = context.R15;
-                    break;
-                default:
-                    printf("ERROR couldn't find the right register\n");
-                    break;
-            }
-#else
-                Register32 reg = identify_call_register(pi.hProcess, currentEip);
-                switch (reg) {
-                case Register32::EAX: 
-                    addr_called = context.Eax;
-                    break;
-                case Register32::ECX: 
-                    addr_called = context.Ecx;
-                    break;
-                case Register32::EDX: 
-                    addr_called = context.Edx;
-                    break;
-                case Register32::EBX: 
-                    addr_called = context.Ebx;
-                    break;
-                case Register32::ESP: 
-                    addr_called = context.Esp;
-                    break;
-                case Register32::EBP: 
-                    addr_called = context.Ebp;
-                    break;
-                case Register32::ESI: 
-                    addr_called = context.Esi;
-                    break;
-                case Register32::EDI:
-                    addr_called = context.Edi;
-                    break;
-                default: 
-                    printf("ERROR couldnt find the right register\n");
-                }
-#endif
-                if (addr_called)
-                {
-                    for (const auto breakpoint : breakpoints_address_map)
-                    {
-                        ADDR_TYPE startAddress = breakpoint.first;
-                        ADDR_TYPE  endAddress = breakpoint.second;
-                        if (addr_called > startAddress and addr_called < endAddress)
-                        {
-                            if (!encrypt_block_with_realloction(startAddress, endAddress - startAddress, pi.hProcess, license.key, file_fields, currentEip, base_address))
-                            {
-                                printf("ERROR encrypt_block_with_realloction \n");
-                            }
-                            break;
-
-                        }
-                    }
-
-                }
+                context.EFlags |= 0x100;  // 0x100 is the trap flag
 #if _MODE_64
                 SetThreadContext(pi.hThread, &context);
 #else
                 Wow64SetThreadContext(pi.hThread, &context);
 #endif
+                continue_status = DBG_CONTINUE;
             }
             else if (breakpoints_address_map.find(cur_virtual_address) != breakpoints_address_map.end())
             {
@@ -211,7 +139,7 @@ int main() {
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
 
-                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi.hProcess, license.key, file_fields, currentEip, base_address))
+                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi.hProcess, key, file_fields, currentEip, base_address))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
                 }

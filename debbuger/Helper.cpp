@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Mode.h"
+#include <openssl/evp.h>
+#include <openssl/sha.h>
 
 #pragma comment(lib, "iphlpapi.lib")
 
@@ -36,7 +37,7 @@ void GetDiskUUID(char* diskUUID)
         return;
     }
 
-    char buffer[SIZE_IDS_VARIABLE];
+    char buffer[SIZE_64];
     bool firstLine = true;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
     {
@@ -45,7 +46,7 @@ void GetDiskUUID(char* diskUUID)
             firstLine = false;
             continue; // Skip the first line
         }
-        strncat_s(diskUUID, SIZE_IDS_VARIABLE, buffer, _TRUNCATE);
+        strncat_s(diskUUID, SIZE_64, buffer, _TRUNCATE);
     }
     _pclose(pipe);
 
@@ -71,7 +72,7 @@ void GetDiskUUID(char* diskUUID)
  */
 void GetMACAddress(char* MAC_address)
 {
-    IP_ADAPTER_INFO AdapterInfo[SIZE_INFO];                   // Allocate information for up to 16 NICs
+    IP_ADAPTER_INFO AdapterInfo[SIZE_64];             // Allocate information for up to 16 NICs
     DWORD dwBufLen = sizeof(AdapterInfo);                     // Save the size in dwBufLen
     DWORD dwStatus = GetAdaptersInfo(AdapterInfo, &dwBufLen); // Call GetAdaptersInfo
 
@@ -81,7 +82,7 @@ void GetMACAddress(char* MAC_address)
     {
         for (UINT i = 0; i < pAdapterInfo->AddressLength; i++)
         {
-            sprintf_s(MAC_address + (i * 3), SIZE_IDS_VARIABLE - (i * 3), "%02x:", pAdapterInfo->Address[i]);
+            sprintf_s(MAC_address + (i * 3), SIZE_64 - (i * 3), "%02x:", pAdapterInfo->Address[i]);
         }
         MAC_address[strlen(MAC_address) - 1] = '\0'; // Remove the last ':'
         pAdapterInfo = pAdapterInfo->Next;
@@ -116,7 +117,7 @@ void getProcessorId(char* cpuId)
 {
     int cpuInfo[4] = { 0 };
     __cpuid(cpuInfo, 0);
-    sprintf_s(cpuId, SIZE_IDS_VARIABLE, "%08X%08X", cpuInfo[3], cpuInfo[0]);
+    sprintf_s(cpuId, SIGNATURE_LENGTH, "%08X%08X", cpuInfo[3], cpuInfo[0]);
 }
 
 /**
@@ -136,7 +137,7 @@ void GetMotherboardID(char* motherboardID)
         return;
     }
 
-    char buffer[SIZE_IDS_VARIABLE];
+    char buffer[SIZE_64];
     bool firstLine = true;
     while (fgets(buffer, sizeof(buffer), pipe) != NULL)
     {
@@ -145,7 +146,7 @@ void GetMotherboardID(char* motherboardID)
             firstLine = false;
             continue; // Skip the first line
         }
-        strncat_s(motherboardID, SIZE_IDS_VARIABLE, buffer, _TRUNCATE);
+        strncat_s(motherboardID, SIZE_64, buffer, _TRUNCATE);
     }
     _pclose(pipe);
 

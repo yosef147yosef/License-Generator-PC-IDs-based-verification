@@ -1,8 +1,9 @@
 #pragma once
-#include <windows.h>
+
+#include <Windows.h>
 #include "Mode.h"
 #include <ctime>
-#include <stdio.h>
+
 /**
  * @brief The License structure represents a software license.
  *
@@ -16,24 +17,12 @@
  */
 struct License
 {
-    unsigned char  pc_id[PC_ID_LENGTH];        ///< The PC ID associated with the license.
-    unsigned char key[AES_KEY_LENGTH];        ///< The AES key used for encryption.
+    unsigned char  pc_id[RSA_KEY_LENGTH];        ///< The PC ID associated with the license.
+    unsigned char key[SIZE_64];        ///< The AES key used for encryption.
     time_t generation_time;          ///< The time when the license was generated.
     const char FILE_NAME[sizeof(LICENSE_FILENAME) + 1] = LICENSE_FILENAME;  ///< The file name for storing the license data.
-    License() {
-        FILE* file;
-        fopen_s(&file, LICENSE_FILENAME, "rb");
-        if (!file) {
-            handleErrors();
-        }
-
-        // Read the License object from the file
-        License license;
-        size_t license_size = fread(&license, sizeof(License), 1, file);
-        if (license_size != 1) {
-            handleErrors();
-        }
-    }
+    License() {}
+    License(const char* fileName);
     /**
      * @brief Handles OpenSSL errors.
      *
@@ -141,5 +130,5 @@ struct License
      *
      * @param pc_id The buffer to store the generated PC ID.
      */
-    static void generatePCID(unsigned char pc_id[PC_ID_LENGTH]);
+    static void generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]);
 };
