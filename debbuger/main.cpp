@@ -1,10 +1,9 @@
 #include <Windows.h>
-
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h> 
 #include <map>
-
+#include "Crypto.h"
 #include <stdbool.h>
 #include <psapi.h>
 #include <tlhelp32.h>
@@ -50,6 +49,7 @@ int main() {
     bool want_to_debbug = false;
     std::vector<ADDR_TYPE> call_addresses;
     read_call_addresses_from_binary(CALLS_ADDRESS_FILE_Name, call_addresses);
+
     while (TRUE) {
         BYTE l[57];
         SIZE_T t;
@@ -68,13 +68,15 @@ int main() {
                 {
                     address += base_address;
                 }
-                is_breakpoints_seted = set_breakpoints(breakpoints_address, breakpoints_size, pi.hProcess, base_address);
-                is_breakpoints_seted &=  set_breakpoints(call_addresses.data(), call_addresses.size(), pi.hProcess, base_address);
+                is_breakpoints_seted = set_breakpoints(breakpoints_address, breakpoints_size, pi.hProcess, base_address);   
+                ADDR_TYPE start_of_table = 0x411AA7 - file_fields.imageBase + base_address;
+                ADDR_TYPE end_of_table = 0x411AD8 - file_fields.imageBase + base_address;
+                //encrypt_block(start_of_table, end_of_table - start_of_table,pi.hProcess, key);
             }
         }
         print_debug_event(de);
         if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
-            de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
+            de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP)
         {
 #if _MODE_64
         CONTEXT context;
@@ -82,30 +84,22 @@ int main() {
         ADDR_TYPE currentEip = context.Rip;
 #else
         WOW64_CONTEXT context;
-        Wow64GetThreadContext(pi.hThread, &context);
-        ADDR_TYPE currentEip = context.Eip;
-        context.EFlags &= ~0x100;  // Clear the trap flag
+        context.ContextFlags = WOW64_CONTEXT_CONTROL;
+        Wow64GetThreadContext(pi.hThread, &context);//very weird  values in context
+        ADDR_TYPE currentEip = context.Eip; 
 #endif
+        context.EFlags &= ~0x100;  // Clear the trap flag
         ADDR_TYPE cur_virtual_address = currentEip - base_address;
-        for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it) 
-        {
-            if (cur_virtual_address > it->first and cur_virtual_address < it->second)
-            {
-                if (!encrypt_block_with_realloction(cur_virtual_address, it->second - it->first, pi, key, file_fields, currentEip, base_address))
-                {
-                    printf("ERROR coundl decrypt %p ", cur_virtual_address + file_fields.imageBase);
-                }
-                break;
-            }
-        }
+        printf("addr %p \n", cur_virtual_address);
+        enc_part_of_block(pi,cur_virtual_address,key,file_fields,currentEip,base_address,breakpoints_address_map);
 #if _MODE_64
         SetThreadContext(pi.hThread, &context);
 #else
         Wow64SetThreadContext(pi.hThread, &context);
 #endif
         continue_status = DBG_CONTINUE;
-            }
-        if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
+        }
+        else if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
             de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
         {
 #if _MODE_64
@@ -120,12 +114,10 @@ int main() {
             context.ContextFlags = CONTEXT_CONTROL;
             ADDR_TYPE cur_virtual_address = currentEip - base_address;
             printf("%p \n ", cur_virtual_address);
-
-            if ( std::find(call_addresses.begin() , call_addresses.end() , cur_virtual_address) !=call_addresses.end())
+            if (std::find(call_addresses.begin(), call_addresses.end(), cur_virtual_address)!=call_addresses.end())
             {
-
                 restore_original_byte(pi.hProcess, currentEip);
-                context.EFlags |= 0x100;  // 0x100 is the trap flag
+                context.EFlags |= 0x100;  // Clear the trap flag
 #if _MODE_64
                 SetThreadContext(pi.hThread, &context);
 #else
@@ -138,12 +130,21 @@ int main() {
                 printf("Breakpoint hit at %p\n", (LPVOID)currentEip);
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
-
-                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi.hProcess, key, file_fields, currentEip, base_address))
+                if (!encrypt_block_with_realloction(cur_virtual_address, block_size, pi.hProcess, key, file_fields, currentEip, base_address, breakpoints_address_map))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
                 }
-                //set_breakpoint(pi.hProcess, (ADDR_TYPE)0x00C21BE1);
+                for (auto it = call_addresses.begin(); it != call_addresses.end(); ++it)
+                {
+                    if (*it > cur_virtual_address and *it < breakpoints_address_map[cur_virtual_address])
+                    {
+                        if (!set_breakpoint(pi.hProcess, *it+base_address))
+                        {
+                            printf("could set breakpint in %p \n", *it);
+                        }
+                        break;
+                    }
+                }
                 want_to_debbug = true;
 #if _MODE_64
                 SetThreadContext(pi.hThread, &context);
@@ -178,7 +179,7 @@ int main() {
             SIZE_T t;
             ReadProcessMemory(pi.hProcess, (LPVOID)(currentEip-20), l, 30, &t);
             print_byte_array_as_hex(l, 30);
-            printf("ERROR in :: eip : %p \n", currentEip - base_address);
+            printf("ERROR in :: eip : %p \n", currentEip - base_address+file_fields.imageBase);
         }
 
 

@@ -63,16 +63,17 @@ bool set_breakpoints(ADDR_TYPE address[], SIZE_T address_size, HANDLE hprocess, 
     return true;
 }
 
-void restore_original_byte(HANDLE hProcess, ADDR_TYPE address) {
+bool restore_original_byte(HANDLE hProcess, ADDR_TYPE address) {
     for (int i = 0; i < breakpoint_count; i++) {
         if (breakpoints[i].address == address) {
             SIZE_T bytesWritten;
             WriteProcessMemory(hProcess, (LPVOID)address, &breakpoints[i].originalByte, 1, &bytesWritten);
             printf("Original byte restored at %p\n", (LPVOID)address);
             printf("Original byte : %02\n", breakpoints[i].originalByte);
-            break;
+            return true;
         }
     }
+    return false;;
 }
 void print_debug_event(DEBUG_EVENT de) {
     switch (de.dwDebugEventCode) {
@@ -174,4 +175,5 @@ void print_debug_event(DEBUG_EVENT de) {
         break;
     }
 }
+
 

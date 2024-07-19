@@ -53,5 +53,8 @@
     <ClInclude Include="Key_Gen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Crypto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

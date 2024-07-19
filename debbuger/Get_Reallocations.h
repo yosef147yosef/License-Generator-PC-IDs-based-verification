@@ -71,6 +71,8 @@ struct PEFormat {
      * @param addressesInBlock A vector to store the addresses found within the block.
      */
     void AddressesInBlock(ADDR_TYPE startAddress, size_t blockSize, std::vector<ADDR_TYPE>& addressesInBlock);
+    ADDR_TYPE AddressInBlock(ADDR_TYPE startAddress, size_t blockSize);
+
 };
 
 /**
@@ -115,12 +117,15 @@ PEFormat::PEFormat(const char* fileName) {
     buffer = (BYTE*)malloc(fileSize);
     if (buffer == NULL) {
         printf("Could not allocate memory\n");
+        hFile = INVALID_HANDLE_VALUE;
         CloseHandle(hFile);
         return;
     }
 
     if (!ReadFile(hFile, buffer, fileSize, &bytesRead, NULL) || bytesRead != fileSize) {
         printf("Could not read file. Error: %d\n", GetLastError());
+        buffer = NULL;
+        hFile = INVALID_HANDLE_VALUE;
         free(buffer);
         CloseHandle(hFile);
         return;
@@ -129,6 +134,8 @@ PEFormat::PEFormat(const char* fileName) {
     dosHeader = (PIMAGE_DOS_HEADER)buffer;
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
         printf("Invalid DOS signature\n");
+        buffer = NULL;
+        hFile = INVALID_HANDLE_VALUE;
         free(buffer);
         CloseHandle(hFile);
         return;
@@ -142,6 +149,8 @@ PEFormat::PEFormat(const char* fileName) {
 
     if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
         printf("Invalid NT signature\n");
+        buffer = NULL;
+        hFile = INVALID_HANDLE_VALUE;
         free(buffer);
         CloseHandle(hFile);
         return;
@@ -150,6 +159,8 @@ PEFormat::PEFormat(const char* fileName) {
 #ifdef _MODE64
     if (ntHeaders->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
         printf("Not a 64-bit executable\n");
+        buffer = NULL;
+        hFile = INVALID_HANDLE_VALUE;
         free(buffer);
         CloseHandle(hFile);
         return;
@@ -157,6 +168,8 @@ PEFormat::PEFormat(const char* fileName) {
 #else
     if (ntHeaders->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
         printf("Not a 32-bit executable\n");
+        buffer = NULL;
+        hFile = INVALID_HANDLE_VALUE;
         free(buffer);
         CloseHandle(hFile);
         return;
@@ -239,4 +252,15 @@ void PEFormat::AddressesInBlock(ADDR_TYPE startAddress, size_t blockSize, std::v
             addressesInBlock.push_back(address);
         }
     }
+}
+
+ADDR_TYPE PEFormat::AddressInBlock(ADDR_TYPE startAddress, size_t blockSize) {
+    ADDR_TYPE endAddress = startAddress + blockSize;
+
+    for (const auto& address : relocationAddresses) {
+        if (address >= startAddress && address < endAddress) {
+            return address;
+        }
+    }
+    return NULL;
 }
