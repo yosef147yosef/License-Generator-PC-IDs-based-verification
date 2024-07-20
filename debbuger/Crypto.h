@@ -69,10 +69,10 @@ ADDR_TYPE get_start_block(ADDR_TYPE cur_virtual_address, std::map<ADDR_TYPE,ADDR
     }
     return NULL;
 }
-bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, HANDLE hprocess, BYTE* key, PEFormat& file_fields, ADDR_TYPE currentEip, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
+bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, HANDLE hprocess, BYTE* key, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
 {
     std::vector<ADDR_TYPE> addr_to_reallocate_in_the_block;
-    file_fields.AddressesInBlock(currentEip, block_size, addr_to_reallocate_in_the_block);
+    file_fields.AddressesInBlock(start_address+base_address, block_size, addr_to_reallocate_in_the_block);
     ADDR_TYPE reallocate_factor = file_fields.imageBase - base_address;
     for (const auto& addr : addr_to_reallocate_in_the_block)
     {
@@ -81,9 +81,9 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
     }
     printf("the addres is %p \n", start_address + file_fields.imageBase);
     printf("the end address is %p \n", breakpoints_address_map[start_address]  + file_fields.imageBase);
-    if (!encrypt_block(currentEip, block_size, hprocess, key))
+    if (!encrypt_block(start_address+ base_address, block_size, hprocess, key))
     {
-        printf("ERROR couldn't decrypt the block starting at %p correctly\n", (LPVOID)currentEip);
+        printf("ERROR couldn't decrypt the block starting at %p correctly\n", (LPVOID)(start_address + base_address));
         return false;
     }
     for (const auto& addr : addr_to_reallocate_in_the_block)
@@ -115,7 +115,7 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
 
     return true;
 }
-bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, PROCESS_INFORMATION& pi, License license, PEFormat& file_fields, ADDR_TYPE currentEip, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE> breakpoints_address_map)
+bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, PROCESS_INFORMATION& pi, License license, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
 {
     if (!license.verifyLicense())
     {
@@ -126,16 +126,16 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
     }
     BYTE key[AES_KEY_LENGTH];
     gen_key(start_address - base_address, license, key);
-    return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields, currentEip, base_address, breakpoints_address_map);
+    return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields,  base_address, breakpoints_address_map);
 
 }
-bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BYTE key[], PEFormat& file_fields, ADDR_TYPE currentEip, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE> breakpoints_address_map)
+bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BYTE key[], PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE> breakpoints_address_map)
 {
     for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it)
     {
         if (cur_virtual_address > it->first and cur_virtual_address < it->second)
         {
-            if (!encrypt_block_with_realloction(cur_virtual_address, it->second - it->first, pi, key, file_fields, currentEip, base_address, breakpoints_address_map))
+            if (!encrypt_block_with_realloction(it->first, it->second - it->first, pi, key, file_fields, base_address, breakpoints_address_map))
             {
                 printf("ERROR coundl decrypt %p ", cur_virtual_address + file_fields.imageBase);
                 return false;
@@ -144,4 +144,40 @@ bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BY
         }
     }
     return false;
+}
+bool enc_data_rdata_sections( PEFormat& file_fields, PROCESS_INFORMATION& pi,ADDR_TYPE base_address, License license)
+{
+    ADDR_TYPE data_section_start = file_fields.dataStartAddress;
+    SIZE_T data_section_end = file_fields.dataEndAddress;
+    ADDR_TYPE rdata_section_start = file_fields.rdataStartAddress;
+    SIZE_T rdata_section_end = file_fields.rdataEndAddress;
+    ADDR_TYPE reallocate_factor = file_fields.imageBase - base_address;
+    for (ADDR_TYPE addr : file_fields.relocationAddresses)
+    {
+        if (addr >= data_section_start and addr < data_section_end or addr >= rdata_section_start and addr < rdata_section_end)
+        {
+            if (!reallocateAddress(addr, pi.hProcess, reallocate_factor))
+            {
+                printf("ERROR couldnt reallocate the address %p \n", addr);
+                return false;
+            }
+        }
+    }
+    if (!license.verifyLicense())
+    {
+        printf("ERROR! the license had being curated \n ");
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        ExitProcess(NULL);
+    }
+    BYTE data_key[AES_KEY_LENGTH];
+    gen_key(data_section_start, license, data_key);   
+    BYTE rdata_key[AES_KEY_LENGTH];
+    gen_key(data_section_start, license, rdata_key);
+    if (!encrypt_block(data_section_start + base_address, data_section_end - data_section_start, pi.hProcess, rdata_key)|| encrypt_block(data_section_start + base_address, data_section_end - data_section_start, pi.hProcess, data_key))
+    {
+        printf("ERROR decrypting data or rdata sections\n ");
+        return false;
+    }
+    return true;
 }

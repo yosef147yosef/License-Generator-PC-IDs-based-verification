@@ -41,9 +41,6 @@
     <ClInclude Include="Call_insturction_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\source\repos\yosef147yosef\Project-5---License-Generator-PC-IDs-based-verification\Project-5---License-Generator-PC-IDs-based-verification\Helper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="License.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -138,7 +138,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\source\repos\yosef147yosef\Project-5---License-Generator-PC-IDs-based-verification\Project-5---License-Generator-PC-IDs-based-verification\Helper.h" />
     <ClInclude Include="Call_insturction_handler.h" />
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="Debbuger.h" />

@@ -41,6 +41,11 @@ struct PEFormat {
     ADDR_TYPE imageBase;               ///< Base address of the image.
     std::vector<ADDR_TYPE> relocationAddresses; ///< Vector of relocation addresses.
 
+    ADDR_TYPE dataStartAddress;        ///< Start address of the .data section (relative to image base)
+    ADDR_TYPE dataEndAddress;          ///< End address of the .data section (relative to image base)
+    ADDR_TYPE rdataStartAddress;       ///< Start address of the .rdata section (relative to image base)
+    ADDR_TYPE rdataEndAddress;         ///< End address of the .rdata section (relative to image base)
+
     /**
      * @brief Default constructor initializes member variables.
      */
@@ -52,6 +57,13 @@ struct PEFormat {
      * @param fileName Name of the PE file to read.
      */
     PEFormat(const char* fileName);
+
+    /**
+     * @brief Copy constructor for deep copying PEFormat objects.
+     *
+     * @param other The PEFormat object to copy from.
+     */
+    PEFormat(const PEFormat& other);
 
     /**
      * @brief Destructor to clean up allocated resources.
@@ -72,7 +84,6 @@ struct PEFormat {
      */
     void AddressesInBlock(ADDR_TYPE startAddress, size_t blockSize, std::vector<ADDR_TYPE>& addressesInBlock);
     ADDR_TYPE AddressInBlock(ADDR_TYPE startAddress, size_t blockSize);
-
 };
 
 /**
@@ -80,7 +91,8 @@ struct PEFormat {
  */
 PEFormat::PEFormat() : hFile(INVALID_HANDLE_VALUE), fileSize(0), buffer(NULL),
 dosHeader(NULL), ntHeaders(NULL), sectionHeader(NULL),
-relocation(NULL), relocRVA(0), relocSize(0), imageBase(0) {}
+relocation(NULL), relocRVA(0), relocSize(0), imageBase(0),
+dataStartAddress(0), dataEndAddress(0), rdataStartAddress(0), rdataEndAddress(0) {}
 
 /**
  * @brief Constructs the PEFormat object and initializes it by reading the specified PE file.
@@ -98,6 +110,10 @@ PEFormat::PEFormat(const char* fileName) {
     relocRVA = 0;
     relocSize = 0;
     imageBase = 0;
+    dataStartAddress = 0;
+    dataEndAddress = 0;
+    rdataStartAddress = 0;
+    rdataEndAddress = 0;
 
     DWORD bytesRead = 0;
 
@@ -181,6 +197,18 @@ PEFormat::PEFormat(const char* fileName) {
     relocSize = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
     imageBase = ntHeaders->OptionalHeader.ImageBase;
 
+    // Find .data and .rdata sections
+    for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
+        if (strcmp((char*)sectionHeader[i].Name, ".data") == 0) {
+            dataStartAddress = sectionHeader[i].VirtualAddress - imageBase;
+            dataEndAddress = dataStartAddress + sectionHeader[i].Misc.VirtualSize;
+        }
+        else if (strcmp((char*)sectionHeader[i].Name, ".rdata") == 0) {
+            rdataStartAddress = sectionHeader[i].VirtualAddress - imageBase;
+            rdataEndAddress = rdataStartAddress + sectionHeader[i].Misc.VirtualSize;
+        }
+    }
+
     if (relocRVA != 0 && relocSize > 0) {
         DWORD relocOffset = 0;
         for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++) {
@@ -195,6 +223,46 @@ PEFormat::PEFormat(const char* fileName) {
             ProcessRelocationEntries();
         }
     }
+}
+
+/**
+ * @brief Copy constructor for deep copying PEFormat objects.
+ *
+ * @param other The PEFormat object to copy from.
+ */
+PEFormat::PEFormat(const PEFormat& other) {
+    hFile = INVALID_HANDLE_VALUE;  // We don't copy the file handle
+    fileSize = other.fileSize;
+
+    if (other.buffer != NULL) {
+        buffer = (BYTE*)malloc(fileSize);
+        if (buffer != NULL) {
+            memcpy(buffer, other.buffer, fileSize);
+            dosHeader = (PIMAGE_DOS_HEADER)buffer;
+            ntHeaders = (PIMAGE_NT_HEADERS)(buffer + dosHeader->e_lfanew);
+            sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
+
+            DWORD relocOffset = (BYTE*)other.relocation - other.buffer;
+            relocation = (PIMAGE_BASE_RELOCATION)(buffer + relocOffset);
+        }
+    }
+    else {
+        buffer = NULL;
+        dosHeader = NULL;
+        ntHeaders = NULL;
+        sectionHeader = NULL;
+        relocation = NULL;
+    }
+
+    relocRVA = other.relocRVA;
+    relocSize = other.relocSize;
+    imageBase = other.imageBase;
+    relocationAddresses = other.relocationAddresses;
+
+    dataStartAddress = other.dataStartAddress;
+    dataEndAddress = other.dataEndAddress;
+    rdataStartAddress = other.rdataStartAddress;
+    rdataEndAddress = other.rdataEndAddress;
 }
 
 /**
@@ -227,8 +295,8 @@ void PEFormat::ProcessRelocationEntries() {
             DWORD offset = entry & 0xFFF;
 
             if (type != 0) { // Type 0 means padding
-                ADDR_TYPE relocAddress = imageBase + currentRelocation->VirtualAddress + offset;
-                relocationAddresses.push_back(relocAddress - imageBase);
+                ADDR_TYPE relocAddress = currentRelocation->VirtualAddress + offset;
+                relocationAddresses.push_back(relocAddress);
             }
         }
 
