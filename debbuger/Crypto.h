@@ -125,7 +125,7 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
         ExitProcess(NULL);
     }
     BYTE key[AES_KEY_LENGTH];
-    gen_key(start_address - base_address, license, key);
+    gen_key(start_address, license, key);
     return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields,  base_address, breakpoints_address_map);
 
 }

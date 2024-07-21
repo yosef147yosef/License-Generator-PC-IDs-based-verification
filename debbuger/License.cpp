@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <ctime>
 #include <cstring>
-#include "Mode.h"
 #include "Helper.h"
+
 /**
  * @brief Generates a new RSA key pair and saves them to files if they do not already exist.
  *
@@ -22,7 +22,6 @@
  *
  * @return Void. If successful, new RSA key pair files are created on the filesystem.
  *         If an error occurs during key generation or file operations, the function may abort.
- *
  */
 void License::generateRSAKeyPair() {
     FILE* public_key_file = NULL;
@@ -192,6 +191,7 @@ bool License::readPrivateKey(char* buffer, size_t buffer_len) {
     return true;
 }
 
+
 /**
  * @brief Signs the License object using the private key and stores the signature in the provided buffer.
  *
@@ -215,7 +215,7 @@ bool License::sign_license(unsigned char* signature) {
         BIO_free(bio_private);
         return false;
     }
-    size_t signature_length = SIZE_64;
+    size_t signature_length = SIGNATURE_LENGTH;
     EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
     if (!mdctx) handleErrors();
 
@@ -223,6 +223,10 @@ bool License::sign_license(unsigned char* signature) {
     if (EVP_DigestSignUpdate(mdctx, this, sizeof(*this)) <= 0) handleErrors();
     if (EVP_DigestSignFinal(mdctx, NULL, &signature_length) <= 0) handleErrors();
     if (EVP_DigestSignFinal(mdctx, signature, &signature_length) <= 0) handleErrors();
+
+    if (signature_length > SIGNATURE_LENGTH) {
+        printf("Warning: Signature size (%zu) is larger than expected (%d)\n", signature_length, SIGNATURE_LENGTH);
+    }
 
     EVP_MD_CTX_free(mdctx);
     EVP_PKEY_free(pkey);
@@ -260,7 +264,7 @@ bool License::verifySignature(unsigned char* signature) {
 
     if (EVP_DigestVerifyInit(mdctx, NULL, EVP_sha256(), NULL, pkey) <= 0) handleErrors();
     if (EVP_DigestVerifyUpdate(mdctx, this, sizeof(*this)) <= 0) handleErrors();
-    int verify_result = EVP_DigestVerifyFinal(mdctx, signature, SIZE_64);
+    int verify_result = EVP_DigestVerifyFinal(mdctx, signature, SIGNATURE_LENGTH);
 
     EVP_MD_CTX_free(mdctx);
     EVP_PKEY_free(pkey);
@@ -290,15 +294,15 @@ void License::handleErrors(void)
  *
  * @param PC_ID The PC ID to initialize the License object.
  */
-License::License(unsigned char PC_ID[])
+License::License(unsigned char* PC_ID)
 {
-    memcpy_s(this->pc_id, RSA_KEY_LENGTH, PC_ID, RSA_KEY_LENGTH);
+    memcpy_s(this->pc_id, PC_ID_LENGTH, PC_ID, PC_ID_LENGTH);
     generation_time = time(NULL);
-    BYTE seed[RSA_KEY_LENGTH + sizeof(generation_time)];
-    memcpy_s(seed, RSA_KEY_LENGTH + sizeof(generation_time), PC_ID, RSA_KEY_LENGTH);
-    memcpy_s(seed + RSA_KEY_LENGTH, sizeof(generation_time), &generation_time, sizeof(generation_time));
-    RAND_seed(seed, RSA_KEY_LENGTH + sizeof(generation_time));
-    if (!RAND_bytes(key, SIZE_64)) {
+    BYTE seed[AES_KEY_LENGTH + sizeof(generation_time)];
+    memcpy_s(seed, AES_KEY_LENGTH + sizeof(generation_time), PC_ID, AES_KEY_LENGTH);
+    memcpy_s(seed + AES_KEY_LENGTH, sizeof(generation_time), &generation_time, sizeof(generation_time));
+    RAND_seed(seed, AES_KEY_LENGTH + sizeof(generation_time));
+    if (!RAND_bytes(key, AES_KEY_LENGTH)) {
         handleErrors();
     }
     generateRSAKeyPair();
@@ -321,10 +325,10 @@ bool License::gen_license() {
         return false;
     }
     // Write the License object to the file
-    unsigned char l[sizeof(*this) + SIZE_64];
+    unsigned char l[sizeof(*this) + SIGNATURE_LENGTH];
     memcpy_s(l, sizeof(*this), this, sizeof(*this));
     sign_license(l + sizeof(*this));
-    if (fwrite(l, sizeof(*this) + SIZE_64, 1, file) != 1)
+    if (fwrite(l, sizeof(*this) + SIGNATURE_LENGTH, 1, file) != 1)
     {
         fclose(file);
         return false;
@@ -369,7 +373,7 @@ bool License::verifyLicense() {
  * @note The SHA256_DIGEST_LENGTH constant, defined by OpenSSL, specifies that the SHA-256 hash
  * has a length of 256 bits (32 bytes).
  */
-void License::generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]) {
+void License::generatePCID(unsigned char* pc_id) {
     char diskUUID[SIZE_64] = { 0 };
     char biosUUID[SIZE_64] = { 0 };
     char motherboardID[SIZE_64] = { 0 };
@@ -377,8 +381,8 @@ void License::generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]) {
     DWORD volumeSerialNumber;
     char cpuId[SIGNATURE_LENGTH] = { 0 };
     char concatenatedIDs[CONCATENATE_SIZE] = { 0 };
-    unsigned char hashedIDs[SIZE_HASHED] = { 0 };
-    char hexStr[SIZE_HASHED * 2 + 1] = { 0 };
+    unsigned char hashedIDs[SHA256_DIGEST_LENGTH] = { 0 };
+    char hexStr[SHA256_DIGEST_LENGTH * 2 + 1] = { 0 };
 
     // Get hardware IDs
     GetDiskUUID(diskUUID);
@@ -396,7 +400,6 @@ void License::generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]) {
     GetMotherboardID(motherboardID);
     //printf("\nGetMotherboardID: %s\n", motherboardID);
 
-
     // Concatenate all IDs into a single string
     snprintf(concatenatedIDs, sizeof(concatenatedIDs), "%s%s%lu%s%s%s",
         diskUUID, MAC_address, volumeSerialNumber, cpuId, biosUUID, motherboardID);
@@ -407,48 +410,14 @@ void License::generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]) {
     // Hash the concatenated string
     sha256(hashedIDs, concatenatedIDs);
 
-    /******* TO PRINT HASH VALUE *********/
-     /*SHA256((unsigned char*)concatenatedIDs, strlen(concatenatedIDs), hashedIDs);
-     printf("SHA-256 hash: ");
-     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-         printf("%02x", hashedIDs[i]);
-     }
-     printf("\n");*/
-
-     // Convert the hash to a hexadecimal string
-    hash_to_hex(hashedIDs, SHA256_DIGEST_LENGTH, hexStr);
+    // Convert the hash to a hexadecimal string
+    //hash_to_hex(hashedIDs, SHA256_DIGEST_LENGTH, hexStr);
+    //printf("Hash in hex : %s\n", hexStr);
 
     // Copy the hashed IDs to the pc_id buffer
-    memcpy_s(pc_id, SIGNATURE_LENGTH, hashedIDs, SIGNATURE_LENGTH);
+    memcpy_s(pc_id, PC_ID_LENGTH, hashedIDs, PC_ID_LENGTH);
 }
-License::License(const char* fileName) {
-    FILE* file = nullptr;
-    errno_t err = fopen_s(&file, fileName, "rb");
 
-    if (err != 0 || file == nullptr) {
-        // Handle file opening error
-        handleErrors();
-        return;
-    }
-
-    // Read the License data from the file
-    size_t bytesRead = fread(this, 1, sizeof(License) - sizeof(this->FILE_NAME), file);
-
-    fclose(file);
-
-    if (bytesRead != sizeof(License) - sizeof(this->FILE_NAME)) {
-        // Handle reading error or incorrect file size
-        handleErrors();
-        return;
-    }
-
-    // Copy the provided file name to FILE_NAME
-    errno_t strcpy_err = strcpy_s(const_cast<char*>(this->FILE_NAME), sizeof(this->FILE_NAME), fileName);
-    if (strcpy_err != 0) {
-        handleErrors();
-        return;
-    }
-}
 
 
 

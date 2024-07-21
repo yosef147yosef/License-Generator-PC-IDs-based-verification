@@ -14,7 +14,13 @@
 #include <algorithm>
 #include "Key_Gen.h"
 int main() {
-    License license;
+    unsigned char  pc_id[PC_ID_LENGTH];
+    //unsigned char key[AES_KEY_LENGTH];
+    unsigned char signature[SIGNATURE_LENGTH];
+    License::generatePCID(pc_id);
+    License license(pc_id);
+    license.sign_license(signature);
+    license.gen_license();
     BYTE key[16] = { 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' };
     STARTUPINFOW si = { 0 };
     PROCESS_INFORMATION pi = { 0 };
@@ -62,11 +68,6 @@ int main() {
 
             if (base_address)
             {
-                if (!enc_data_rdata_sections(file_fields, pi, base_address, license))
-                {
-                    printf("ERROR could decrypt the data or rdata sections\n");
-                    return -1;
-                }
                 
                 for (ADDR_TYPE& address : file_fields.relocationAddresses)
                 {
@@ -135,7 +136,7 @@ int main() {
                 printf("Breakpoint hit at %p\n", (LPVOID)currentEip);
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
-                if (!encrypt_block_with_realloction(cur_virtual_address, block_size, pi, license, file_fields, base_address, breakpoints_address_map))
+                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi,license.key,file_fields,base_address,breakpoints_address_map))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
                 }

@@ -147,6 +147,7 @@
     <ClInclude Include="License.h" />
     <ClInclude Include="Mode.h" />
     <ClInclude Include="Raw_Bytes_Helper.h" />
+    <ClInclude Include="sizes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

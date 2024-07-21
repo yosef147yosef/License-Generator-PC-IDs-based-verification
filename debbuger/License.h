@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Windows.h>
-#include "Mode.h"
+#include "sizes.h"
 #include <ctime>
 
 /**
@@ -17,12 +17,11 @@
  */
 struct License
 {
-    unsigned char  pc_id[RSA_KEY_LENGTH];        ///< The PC ID associated with the license.
-    unsigned char key[SIZE_64];        ///< The AES key used for encryption.
+    unsigned char  pc_id[PC_ID_LENGTH];        ///< The PC ID associated with the license.
+    unsigned char key[AES_KEY_LENGTH];        ///< The AES key used for encryption.
     time_t generation_time;          ///< The time when the license was generated.
     const char FILE_NAME[sizeof(LICENSE_FILENAME) + 1] = LICENSE_FILENAME;  ///< The file name for storing the license data.
     License() {}
-    License(const char* fileName);
     /**
      * @brief Handles OpenSSL errors.
      *
@@ -41,7 +40,7 @@ struct License
      *
      * @param PC_ID The PC ID to initialize the License object.
      */
-    License(unsigned char pc_id[]);
+    License(unsigned char* pc_id);
     /**
      * @brief Generates a license and writes it to a file.
      *
@@ -130,5 +129,5 @@ struct License
      *
      * @param pc_id The buffer to store the generated PC ID.
      */
-    static void generatePCID(unsigned char pc_id[SIGNATURE_LENGTH]);
+    static void generatePCID(unsigned char* pc_id);
 };
