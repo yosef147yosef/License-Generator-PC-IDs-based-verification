@@ -42,6 +42,7 @@ int main() {
     si.cb = sizeof(si);
     char exe_file_name[MAX_PATH_LENGTH];
     get_exe_path(EXE_FILE_NAME, exe_file_name, sizeof(exe_file_name));
+    printf("%s \n", exe_file_name);
     WCHAR commandLine[MAX_PATH];
     MultiByteToWideChar(CP_ACP, 0, exe_file_name, -1, commandLine, MAX_PATH);
 

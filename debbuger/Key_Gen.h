@@ -76,7 +76,7 @@ void gen_key(ADDR_TYPE start_address, License& license, BYTE key[])
         License::generatePCID(info);
         pc_id_genreated = true;
     }
-    hkdf(salt, sizeof(ADDR_TYPE), license.key, AES_KEY_LENGTH, license.pc_id, PC_ID_LENGTH, key, AES_KEY_LENGTH);
+    hkdf(salt, sizeof(ADDR_TYPE), license.key, AES_KEY_LENGTH, info ,PC_ID_LENGTH, key, AES_KEY_LENGTH);
     print_byte_array_as_hex1(license.key, 16);
     print_byte_array_as_hex1(key, 16);
 }
