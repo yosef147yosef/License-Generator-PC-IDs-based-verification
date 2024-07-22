@@ -11,6 +11,8 @@
 #include <tlhelp32.h>
 #include "Raw_Bytes_Helper.h"
 #include "Mode.h"
+
+
 typedef struct {
     ADDR_TYPE address;
     BYTE originalByte;
@@ -18,6 +20,17 @@ typedef struct {
 
 Breakpoint breakpoints[MAX_BREAKPOINTS];
 int breakpoint_count = 0;
+
+/**
+ * @brief Sets a breakpoint at the specified address in the target process.
+ *
+ * This function sets a breakpoint by replacing the byte at the specified address
+ * with an INT3 instruction (0xCC) and stores the original byte for later restoration.
+ *
+ * @param hProcess Handle to the target process.
+ * @param address Address where the breakpoint should be set.
+ * @return TRUE if the breakpoint was successfully set, FALSE otherwise.
+ */
 BOOL set_breakpoint(HANDLE hProcess, ADDR_TYPE address) {
     if (breakpoint_count >= MAX_BREAKPOINTS) {
         printf("Maximum number of breakpoints reached.\n");
@@ -45,6 +58,19 @@ BOOL set_breakpoint(HANDLE hProcess, ADDR_TYPE address) {
     return TRUE;
 }
 
+
+/**
+ * @brief Sets multiple breakpoints at specified addresses in the target process.
+ *
+ * This function sets breakpoints at multiple addresses by calling set_breakpoint
+ * for each address in the provided array.
+ *
+ * @param address Array of addresses where breakpoints should be set.
+ * @param address_size Number of addresses in the array.
+ * @param hprocess Handle to the target process.
+ * @param base_address Base address of the process.
+ * @return true if all breakpoints were successfully set, false otherwise.
+ */
 bool set_breakpoints(ADDR_TYPE address[], SIZE_T address_size, HANDLE hprocess, ADDR_TYPE base_address)
 {
     if (base_address == NULL) {
@@ -63,6 +89,17 @@ bool set_breakpoints(ADDR_TYPE address[], SIZE_T address_size, HANDLE hprocess, 
     return true;
 }
 
+
+/**
+ * @brief Restores the original byte at a breakpoint address.
+ *
+ * This function replaces the INT3 instruction (0xCC) at the specified address
+ * with the original byte that was there before the breakpoint was set.
+ *
+ * @param hProcess Handle to the target process.
+ * @param address Address of the breakpoint to restore.
+ * @return true if the original byte was successfully restored, false otherwise.
+ */
 bool restore_original_byte(HANDLE hProcess, ADDR_TYPE address) {
     for (int i = 0; i < breakpoint_count; i++) {
         if (breakpoints[i].address == address) {
@@ -75,6 +112,15 @@ bool restore_original_byte(HANDLE hProcess, ADDR_TYPE address) {
     }
     return false;;
 }
+
+/**
+ * @brief Prints information about a debug event.
+ *
+ * This function takes a DEBUG_EVENT structure and prints human-readable
+ * information about the event, including exception details for EXCEPTION_DEBUG_EVENT.
+ *
+ * @param de The DEBUG_EVENT structure to print information about.
+ */
 void print_debug_event(DEBUG_EVENT de) {
     switch (de.dwDebugEventCode) {
     case EXCEPTION_DEBUG_EVENT: {

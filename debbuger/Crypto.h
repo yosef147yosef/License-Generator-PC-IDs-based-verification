@@ -8,6 +8,16 @@
 #include "License.h"
 #include <windows.h>
 #include <psapi.h>
+
+/**
+ * @brief Encrypts a block of memory in the target process.
+ *
+ * @param start_address Starting address of the block to encrypt.
+ * @param size Size of the block to encrypt.
+ * @param hprocess Handle to the target process.
+ * @param key Encryption key.
+ * @return true if encryption was successful, false otherwise.
+ */
 bool encrypt_block(ADDR_TYPE start_address, SIZE_T size, HANDLE hprocess, BYTE* key)
 {
     BYTE* cypher = (BYTE*)malloc(size);
@@ -40,6 +50,17 @@ bool encrypt_block(ADDR_TYPE start_address, SIZE_T size, HANDLE hprocess, BYTE* 
     free(plaintext);
     return true;
 }
+
+
+/**
+ * @brief Reallocates an address in the target process.
+ *
+ * @param addr Address to reallocate.
+ * @param hprocess Handle to the target process.
+ * @param reallocate_factor Factor by which to reallocate the address.
+ * @param size Size of the address (default is sizeof(ADDR_TYPE)).
+ * @return true if reallocation was successful, false otherwise.
+ */
 bool reallocateAddress(ADDR_TYPE addr, HANDLE hprocess, ADDR_TYPE reallocate_factor , SIZE_T size = sizeof(ADDR_TYPE))
 {
     ADDR_TYPE tempBuffer; // Assuming DWORD is the size to read, adjust as needed
@@ -58,6 +79,15 @@ bool reallocateAddress(ADDR_TYPE addr, HANDLE hprocess, ADDR_TYPE reallocate_fac
         return false;
     }
 }
+
+
+/**
+ * @brief Gets the start address of a block containing the given virtual address.
+ *
+ * @param cur_virtual_address Current virtual address.
+ * @param breakpoints_address_map Map of breakpoint addresses.
+ * @return Start address of the block, or NULL if not found.
+ */
 ADDR_TYPE get_start_block(ADDR_TYPE cur_virtual_address, std::map<ADDR_TYPE,ADDR_TYPE>& breakpoints_address_map)
 {
     for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it)
@@ -69,6 +99,19 @@ ADDR_TYPE get_start_block(ADDR_TYPE cur_virtual_address, std::map<ADDR_TYPE,ADDR
     }
     return NULL;
 }
+
+/**
+ * @brief Encrypts a block with reallocation in the target process.
+ *
+ * @param start_address Starting address of the block.
+ * @param block_size Size of the block.
+ * @param hprocess Handle to the target process.
+ * @param key Encryption key.
+ * @param file_fields PEFormat object containing file information.
+ * @param base_address Base address of the process.
+ * @param breakpoints_address_map Map of breakpoint addresses.
+ * @return true if encryption and reallocation were successful, false otherwise.
+ */
 bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, HANDLE hprocess, BYTE* key, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
 {
     std::vector<ADDR_TYPE> addr_to_reallocate_in_the_block;
@@ -110,11 +153,23 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
                 break;
             }
         }
-
     }
 
     return true;
 }
+
+/**
+ * @brief Encrypts a block with reallocation in the target process, using a license.
+ *
+ * @param start_address Starting address of the block.
+ * @param block_size Size of the block.
+ * @param pi Process information.
+ * @param license License object for verification.
+ * @param file_fields PEFormat object containing file information.
+ * @param base_address Base address of the process.
+ * @param breakpoints_address_map Map of breakpoint addresses.
+ * @return true if encryption and reallocation were successful, false otherwise.
+ */
 bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, PROCESS_INFORMATION& pi, License license, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
 {
     if (!license.verifyLicense())
@@ -129,6 +184,19 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
     return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields,  base_address, breakpoints_address_map);
 
 }
+
+
+/**
+ * @brief Encrypts part of a block in the target process.
+ *
+ * @param pi Process information.
+ * @param cur_virtual_address Current virtual address.
+ * @param key Encryption key.
+ * @param file_fields PEFormat object containing file information.
+ * @param base_address Base address of the process.
+ * @param breakpoints_address_map Map of breakpoint addresses.
+ * @return true if encryption was successful, false otherwise.
+ */
 bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BYTE key[], PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE> breakpoints_address_map)
 {
     for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it)
@@ -145,6 +213,16 @@ bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BY
     }
     return false;
 }
+
+/**
+ * @brief Encrypts data and rdata sections in the target process.
+ *
+ * @param file_fields PEFormat object containing file information.
+ * @param pi Process information.
+ * @param base_address Base address of the process.
+ * @param license License object for verification.
+ * @return true if encryption was successful, false otherwise.
+ */
 bool enc_data_rdata_sections( PEFormat& file_fields, PROCESS_INFORMATION& pi,ADDR_TYPE base_address, License license)
 {
     ADDR_TYPE data_section_start = file_fields.dataStartAddress;
