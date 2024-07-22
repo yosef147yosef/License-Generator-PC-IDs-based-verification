@@ -28,15 +28,6 @@ void read_block_addresses_from_binary(const char* filename, std::map<ADDR_TYPE, 
     fclose(file);
 }
 
-void print_byte_array_as_hex(BYTE* array, SIZE_T size) {
-    for (SIZE_T i = 0; i < size; i++) {
-        printf("%02X ", array[i]);
-        if ((i + 1) % 16 == 0) {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
 
 
 bool aes_ctr_encrypt(BYTE* plaintext, BYTE* key, BYTE* iv, BYTE* ciphertext, SIZE_T size) {

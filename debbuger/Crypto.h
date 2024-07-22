@@ -33,9 +33,6 @@ bool encrypt_block(ADDR_TYPE start_address, SIZE_T size, HANDLE hprocess, BYTE* 
         printf("Can write to the address %p \n", (LPVOID)start_address);
         return false;
     }
-    print_byte_array_as_hex(plaintext, size);
-    print_byte_array_as_hex(cypher, size);
-    printf("% p \n", start_address);
     free(cypher);
     free(plaintext);
     return true;
@@ -79,8 +76,6 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
         if (!reallocateAddress(addr, hprocess, reallocate_factor))
             return false;
     }
-    printf("the addres is %p \n", start_address + file_fields.imageBase);
-    printf("the end address is %p \n", breakpoints_address_map[start_address]  + file_fields.imageBase);
     if (!encrypt_block(start_address+ base_address, block_size, hprocess, key))
     {
         printf("ERROR couldn't decrypt the block starting at %p correctly\n", (LPVOID)(start_address + base_address));
@@ -88,7 +83,6 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
     }
     for (const auto& addr : addr_to_reallocate_in_the_block)
     {
-        printf("address to reallocated %p \n", addr-base_address+file_fields.imageBase);
         if (!reallocateAddress(addr, hprocess, -1 * reallocate_factor))
             return false;
         ADDR_TYPE addr_being_allocated;

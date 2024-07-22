@@ -37,11 +37,10 @@ BOOL set_breakpoint(HANDLE hProcess, ADDR_TYPE address) {
         printf("Failed to write breakpoint at %p\n", (LPVOID)address);
         return FALSE;
     }
-    print_byte_array_as_hex(originalByte, bytesRead);
+    //print_byte_array_as_hex(originalByte, bytesRead);
     breakpoints[breakpoint_count].address = address;
     breakpoints[breakpoint_count].originalByte = originalByte[0];
     breakpoint_count++;
-    printf("Breakpoint set at %p\n", (LPVOID)address);
     return TRUE;
 }
 
@@ -54,7 +53,6 @@ bool set_breakpoints(ADDR_TYPE address[], SIZE_T address_size, HANDLE hprocess, 
     for (int i = 0; i < address_size; i++)
     {
         ADDR_TYPE target_address = address[i] + base_address;
-        printf("seting breakpoint on virtual :  %p ", address[i]);
         if (!set_breakpoint(hprocess, (base_address + address[i]))) {
             printf("Failed to set breakpoint at address %p.\n", (LPVOID)target_address);
             return false;
@@ -68,8 +66,6 @@ bool restore_original_byte(HANDLE hProcess, ADDR_TYPE address) {
         if (breakpoints[i].address == address) {
             SIZE_T bytesWritten;
             WriteProcessMemory(hProcess, (LPVOID)address, &breakpoints[i].originalByte, 1, &bytesWritten);
-            printf("Original byte restored at %p\n", (LPVOID)address);
-            printf("Original byte : %02\n", breakpoints[i].originalByte);
             return true;
         }
     }

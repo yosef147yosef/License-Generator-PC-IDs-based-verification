@@ -53,7 +53,6 @@ int main() {
         return 1;
     }
     PEFormat file_fields(exe_file_name);
-    printf("Started debugging process %d\n", pi.dwProcessId);
     std::map<ADDR_TYPE, ADDR_TYPE> breakpoints_address_map;
     read_block_addresses_from_binary(BLOCKS_FILE_NAME, breakpoints_address_map);
     SIZE_T breakpoints_size = breakpoints_address_map.size();
@@ -61,7 +60,6 @@ int main() {
     int i = 0;
     for (auto it = breakpoints_address_map.begin(); it != breakpoints_address_map.end(); ++it) {
         breakpoints_address[i++] = it->first;
-        printf("% p ", breakpoints_address[i - 1]);
     }
     bool is_breakpoints_seted = false;
     DEBUG_EVENT de;
@@ -110,13 +108,12 @@ int main() {
         Wow64GetThreadContext(pi.hThread, &context);//very weird  values in context
         ADDR_TYPE currentEip = context.Eip;
 #endif
-        print_debug_event(de);
+        //print_debug_event(de);
         if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
             de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP)
         {
         context.EFlags &= ~0x100;  // Clear the trap flag
         ADDR_TYPE cur_virtual_address = currentEip - base_address;
-        printf("addr %p \n", cur_virtual_address);
         enc_part_of_block(pi,cur_virtual_address,license.key,file_fields,base_address,breakpoints_address_map);
 #if _MODE_64
         SetThreadContext(pi.hThread, &context);
@@ -136,7 +133,6 @@ int main() {
    
             context.ContextFlags = CONTEXT_CONTROL;
             ADDR_TYPE cur_virtual_address = currentEip - base_address;
-            printf("%p \n ", cur_virtual_address);
             if (std::find(call_addresses.begin(), call_addresses.end(), cur_virtual_address)!=call_addresses.end())
             {
                 restore_original_byte(pi.hProcess, currentEip);
@@ -150,7 +146,6 @@ int main() {
             }
             else if (breakpoints_address_map.find(cur_virtual_address) != breakpoints_address_map.end())
             {
-                printf("Breakpoint hit at %p\n", (LPVOID)currentEip);
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
                 if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi,license,file_fields,base_address,breakpoints_address_map))
@@ -197,11 +192,6 @@ int main() {
 #else
             ADDR_TYPE currentEip = context.Eip-1;
 #endif
-            BYTE l[30];
-            SIZE_T t;
-            ReadProcessMemory(pi.hProcess, (LPVOID)(currentEip-20), l, 30, &t);
-            print_byte_array_as_hex(l, 30);
-            printf("ERROR in :: eip : %p \n", currentEip - base_address+file_fields.imageBase);
         }
 
 
