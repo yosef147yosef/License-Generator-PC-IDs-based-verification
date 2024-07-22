@@ -411,7 +411,7 @@ void License::generatePCID(unsigned char* pc_id) {
     sha256(hashedIDs, concatenatedIDs);
 
     // Convert the hash to a hexadecimal string
-    //hash_to_hex(hashedIDs, SHA256_DIGEST_LENGTH, hexStr);
+    hash_to_hex(hashedIDs, SHA256_DIGEST_LENGTH, hexStr);
     //printf("Hash in hex : %s\n", hexStr);
 
     // Copy the hashed IDs to the pc_id buffer

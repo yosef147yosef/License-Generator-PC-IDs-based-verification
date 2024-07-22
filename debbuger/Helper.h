@@ -44,3 +44,14 @@ void GetMotherboardID(char* motherboardID);
  * @param str The input string to hash.
  */
 void sha256(unsigned char* hashedIDs, const char* str);
+
+/**
+ * @brief Converts a hash value to a hexadecimal string.
+ *
+ * This function converts a hash value (array of bytes) to a string of hexadecimal characters.
+ *
+ * @param hash The hash value to convert.
+ * @param hash_len The length of the hash value.
+ * @param hex_str The buffer to store the resulting hexadecimal string. It should be at least 2*hash_len + 1 bytes long.
+ */
+void hash_to_hex(const unsigned char* hash, size_t hash_len, char* hex_str);

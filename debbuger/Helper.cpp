@@ -204,4 +204,23 @@ void sha256(unsigned char* hashedIDs, const char* str)
     memcpy_s(hashedIDs, SHA256_DIGEST_LENGTH, hash, SHA256_DIGEST_LENGTH);
 }
 
+/**
+ * @brief Converts a hash value to a hexadecimal string.
+ *
+ * This function converts a hash value (array of bytes) to a string of hexadecimal characters.
+ *
+ * @param hash The hash value to convert.
+ * @param hash_len The length of the hash value.
+ * @param hex_str The buffer to store the resulting hexadecimal string. It should be at least 2*hash_len + 1 bytes long.
+ */
+void hash_to_hex(const unsigned char* hash, size_t hash_len, char* hex_str)
+{
+    static const char hex_chars[] = "0123456789abcdef";
 
+    for (size_t i = 0; i < hash_len; i++)
+    {
+        hex_str[i * 2] = hex_chars[(hash[i] >> 4) & 0xF];
+        hex_str[i * 2 + 1] = hex_chars[hash[i] & 0xF];
+    }
+    hex_str[hash_len * 2] = '\0';
+}
