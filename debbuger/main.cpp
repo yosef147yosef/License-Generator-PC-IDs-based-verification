@@ -13,18 +13,41 @@
 #include "Call_insturction_handler.h"
 #include <algorithm>
 #include "Key_Gen.h"
+#define MAX_PATH_LENGTH 128
+bool get_exe_path(const char* exe_name, char* out_buffer, size_t buffer_size) {
+    if (out_buffer == NULL || buffer_size == 0) {
+        fprintf(stderr, "Invalid output buffer\n");
+        return false;
+    }
+
+    DWORD result = SearchPathA(NULL, exe_name, ".exe", buffer_size, out_buffer, NULL);
+
+    if (result == 0) {
+        DWORD error = GetLastError();
+        fprintf(stderr, "Error finding executable: %lu\n", error);
+        return false;
+    }
+
+    if (result >= buffer_size) {
+        fprintf(stderr, "Path too long for buffer\n");
+        return false;
+    }
+
+    return true;
+}
 int main() {
     License license;
     STARTUPINFOW si = { 0 };
     PROCESS_INFORMATION pi = { 0 };
     si.cb = sizeof(si);
-    char exe_file_name[] =EXE_FILE_NAME;
+    char exe_file_name[MAX_PATH_LENGTH];
+    get_exe_path(EXE_FILE_NAME, exe_file_name, sizeof(exe_file_name));
     WCHAR commandLine[MAX_PATH];
     MultiByteToWideChar(CP_ACP, 0, exe_file_name, -1, commandLine, MAX_PATH);
 
-    if (!CreateProcessW(NULL, commandLine, NULL, NULL, FALSE,
+    if (!CreateProcessA(NULL, exe_file_name, NULL, NULL, FALSE,
         DEBUG_ONLY_THIS_PROCESS | CREATE_SUSPENDED,
-        NULL, NULL, &si, &pi)) {
+        NULL, NULL, (LPSTARTUPINFOA)&si, &pi)) {
         printf("CreateProcess failed (%d).\n", GetLastError());
         return 1;
     }

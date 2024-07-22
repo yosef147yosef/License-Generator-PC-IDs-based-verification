@@ -8,7 +8,7 @@ typedef DWORD ADDR_TYPE;
 #endif
 #define MAX_BREAKPOINTS 100000
 //#define EXE_FILE_NAME  "C:\\Users\\Windows10\\PycharmProjects\\LicenseEncriptino\\example.exe_out.exe"
-#define EXE_FILE_NAME  "C:\\Users\\Windows10\\Desktop\\SofwareToDemostrate\\Debug\\SofwareToDemostrate.exe_out.exe"
+#define EXE_FILE_NAME  "SofwareToDemostrate.exe_out.exe"
 //#define BLOCKS_FILE_NAME "C:\\Users\\Windows10\\PycharmProjects\\LicenseEncriptino\\blocks_list.bin"
 #define BLOCKS_FILE_NAME "C:\\Users\\Windows10\\Desktop\\SofwareToDemostrate\\Debug\\blocks_list.bin"
 //#define CALLS_ADDRESS_FILE_Name "C:\\Users\\Windows10\\PycharmProjects\\LicenseEncriptino\\call_address_list.bin"
