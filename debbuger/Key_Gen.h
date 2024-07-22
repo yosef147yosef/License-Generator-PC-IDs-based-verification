@@ -7,6 +7,23 @@
 #include <openssl/params.h>
 #include <string.h>
 
+
+/**
+ * @brief Performs HKDF (HMAC-based Key Derivation Function) operation.
+ *
+ * This function uses OpenSSL's EVP API to perform HKDF with SHA256.
+ * It derives a key using the provided salt, input key material (IKM), and info.
+ *
+ * @param salt Pointer to the salt.
+ * @param salt_len Length of the salt.
+ * @param ikm Pointer to the input key material.
+ * @param ikm_len Length of the input key material.
+ * @param info Pointer to the info.
+ * @param info_len Length of the info.
+ * @param okm Pointer to the output key material.
+ * @param okm_len Length of the output key material.
+ * @return 1 on success, 0 on failure.
+ */
 int hkdf(const unsigned char* salt, size_t salt_len,
     const unsigned char* ikm, size_t ikm_len,
     const unsigned char* info, size_t info_len,
@@ -47,11 +64,32 @@ int hkdf(const unsigned char* salt, size_t salt_len,
 
     return ret;
 }
+
+/**
+ * @brief Converts an ADDR_TYPE value to a byte array.
+ *
+ * This function takes an ADDR_TYPE value and converts it to a byte array,
+ * with the most significant byte first (big-endian order).
+ *
+ * @param value The ADDR_TYPE value to convert.
+ * @param byteArray The output byte array.
+ */
 void ADDR_TYPEToByteArray(ADDR_TYPE value, BYTE byteArray[]) {
     for (int i = 0; i < sizeof(ADDR_TYPE); ++i) {
         byteArray[i] = (BYTE)((value >> (8 * (3 - i))) & 0xFF);
     }
 }
+
+
+/**
+ * @brief Prints a byte array as hexadecimal values.
+ *
+ * This function takes a byte array and its size, then prints each byte as a two-digit hexadecimal value.
+ * It adds a newline after every 16 bytes for better readability.
+ *
+ * @param array The byte array to print.
+ * @param size The size of the byte array.
+ */
 void print_byte_array_as_hex1(BYTE* array, SIZE_T size) {
     for (SIZE_T i = 0; i < size; i++) {
         printf("%02X ", array[i]);
@@ -61,6 +99,17 @@ void print_byte_array_as_hex1(BYTE* array, SIZE_T size) {
     }
     printf("\n");
 }
+
+/**
+ * @brief Generates a key using HKDF.
+ *
+ * This function generates a key using HKDF with the provided start address, license information, and PC ID.
+ * It uses the start address as salt, the license key as input key material, and the PC ID as info.
+ *
+ * @param start_address The start address to use as salt.
+ * @param license The license object containing the key and PC ID.
+ * @param key The output buffer for the generated key.
+ */
 void gen_key(ADDR_TYPE start_address, License& license, BYTE key[])
 {
     SIZE_T size;
