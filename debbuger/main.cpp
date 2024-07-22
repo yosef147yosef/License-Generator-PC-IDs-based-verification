@@ -14,14 +14,7 @@
 #include <algorithm>
 #include "Key_Gen.h"
 int main() {
-    unsigned char  pc_id[PC_ID_LENGTH];
-    //unsigned char key[AES_KEY_LENGTH];
-    unsigned char signature[SIGNATURE_LENGTH];
-    License::generatePCID(pc_id);
-    License license(pc_id);
-    license.sign_license(signature);
-    license.gen_license();
-    BYTE key[16] = { 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' };
+    License license;
     STARTUPINFOW si = { 0 };
     PROCESS_INFORMATION pi = { 0 };
     si.cb = sizeof(si);
@@ -100,7 +93,7 @@ int main() {
         context.EFlags &= ~0x100;  // Clear the trap flag
         ADDR_TYPE cur_virtual_address = currentEip - base_address;
         printf("addr %p \n", cur_virtual_address);
-        enc_part_of_block(pi,cur_virtual_address,key,file_fields,base_address,breakpoints_address_map);
+        enc_part_of_block(pi,cur_virtual_address,license.key,file_fields,base_address,breakpoints_address_map);
 #if _MODE_64
         SetThreadContext(pi.hThread, &context);
 #else
@@ -136,7 +129,7 @@ int main() {
                 printf("Breakpoint hit at %p\n", (LPVOID)currentEip);
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
-                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi,license.key,file_fields,base_address,breakpoints_address_map))
+                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi,license,file_fields,base_address,breakpoints_address_map))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
                 }

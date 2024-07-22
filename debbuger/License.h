@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include "sizes.h"
 #include <ctime>
-
+#include <stdio.h>
 /**
  * @brief The License structure represents a software license.
  *
@@ -20,8 +20,19 @@ struct License
     unsigned char  pc_id[PC_ID_LENGTH];        ///< The PC ID associated with the license.
     unsigned char key[AES_KEY_LENGTH];        ///< The AES key used for encryption.
     time_t generation_time;          ///< The time when the license was generated.
-    const char FILE_NAME[sizeof(LICENSE_FILENAME) + 1] = LICENSE_FILENAME;  ///< The file name for storing the license data.
-    License() {}
+    License() 
+    {
+        FILE* file;
+        fopen_s(&file, LICENSE_FILENAME, "rb");
+        if (!file) {
+            return;
+        }
+        size_t license_size = fread(this, sizeof(License), 1, file);
+        if (license_size != 1) {
+            return;
+        }
+        fclose(file);
+    }
     /**
      * @brief Handles OpenSSL errors.
      *

@@ -319,7 +319,7 @@ License::License(unsigned char* PC_ID)
  */
 bool License::gen_license() {
     FILE* file;
-    errno_t err = fopen_s(&file, FILE_NAME, "wb");
+    errno_t err = fopen_s(&file, LICENSE_FILENAME, "wb");
     if (err != 0)
     {
         return false;

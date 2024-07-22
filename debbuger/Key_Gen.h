@@ -67,8 +67,16 @@ void gen_key(ADDR_TYPE start_address, License& license, BYTE key[])
     BYTE salt[sizeof(ADDR_TYPE)];
     ADDR_TYPEToByteArray(start_address, salt);
     print_byte_array_as_hex1(salt, 4);
-    BYTE info[] = { 'b','b','b' };
+    
     BYTE k[] = { 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' };
-    hkdf(salt, sizeof(ADDR_TYPE), k, AES_KEY_LENGTH, info, 3, key, AES_KEY_LENGTH);
+    static bool pc_id_genreated = false;
+    static BYTE info[PC_ID_LENGTH];
+    if (!pc_id_genreated)
+    {
+        License::generatePCID(info);
+        pc_id_genreated = true;
+    }
+    hkdf(salt, sizeof(ADDR_TYPE), license.key, AES_KEY_LENGTH, license.pc_id, PC_ID_LENGTH, key, AES_KEY_LENGTH);
+    print_byte_array_as_hex1(license.key, 16);
     print_byte_array_as_hex1(key, 16);
 }
