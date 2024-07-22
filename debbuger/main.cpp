@@ -45,9 +45,9 @@ int main() {
     WCHAR commandLine[MAX_PATH];
     MultiByteToWideChar(CP_ACP, 0, exe_file_name, -1, commandLine, MAX_PATH);
 
-    if (!CreateProcessA(NULL, exe_file_name, NULL, NULL, FALSE,
+    if (!CreateProcessW(NULL, commandLine, NULL, NULL, FALSE,
         DEBUG_ONLY_THIS_PROCESS | CREATE_SUSPENDED,
-        NULL, NULL, (LPSTARTUPINFOA)&si, &pi)) {
+        NULL, NULL, &si, &pi)) {
         printf("CreateProcess failed (%d).\n", GetLastError());
         return 1;
     }
