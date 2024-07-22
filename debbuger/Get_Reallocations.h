@@ -239,7 +239,11 @@ PEFormat::PEFormat(const PEFormat& other) {
         if (buffer != NULL) {
             memcpy(buffer, other.buffer, fileSize);
             dosHeader = (PIMAGE_DOS_HEADER)buffer;
-            ntHeaders = (PIMAGE_NT_HEADERS)(buffer + dosHeader->e_lfanew);
+#ifdef _MODE64
+            ntHeaders = (PIMAGE_NT_HEADERS64)(buffer + dosHeader->e_lfanew);  ///< Pointer to the NT headers (64-bit) of the PE file.
+#else
+            ntHeaders = (PIMAGE_NT_HEADERS32)(buffer + dosHeader->e_lfanew);  ///< Pointer to the NT headers (64-bit) of the PE file.
+#endif
             sectionHeader = IMAGE_FIRST_SECTION(ntHeaders);
 
             DWORD relocOffset = (BYTE*)other.relocation - other.buffer;
