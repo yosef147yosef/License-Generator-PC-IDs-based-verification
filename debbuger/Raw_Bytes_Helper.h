@@ -40,16 +40,6 @@ void read_block_addresses_from_binary(const char* filename, std::map<ADDR_TYPE, 
     fclose(file);
 }
 
-
-/**
- * @brief Prints a byte array as hexadecimal values.
- *
- * This function takes a byte array and its size, then prints each byte as a two-digit hexadecimal value.
- * It adds a newline after every 16 bytes for better readability.
- *
- * @param array The byte array to print.
- * @param size The size of the byte array.
- */
 void print_byte_array_as_hex(BYTE* array, SIZE_T size) {
     for (SIZE_T i = 0; i < size; i++) {
         printf("%02X ", array[i]);
