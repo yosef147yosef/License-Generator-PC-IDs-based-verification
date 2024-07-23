@@ -68,7 +68,7 @@ int main() {
     ResumeThread(pi.hThread);
     std::vector<ADDR_TYPE> call_addresses;
     read_call_addresses_from_binary(CALLS_ADDRESS_FILE_Name, call_addresses);
-   
+
     while (TRUE) {
         BYTE l[57];
         SIZE_T t;
@@ -83,17 +83,17 @@ int main() {
 
             if (base_address)
             {
-                
+
                 for (ADDR_TYPE& address : file_fields.relocationAddresses)
                 {
                     address += base_address;
                 }
-                is_breakpoints_seted = set_breakpoints(breakpoints_address, breakpoints_size, pi.hProcess, base_address);  
+                is_breakpoints_seted = set_breakpoints(breakpoints_address, breakpoints_size, pi.hProcess, base_address);
                 for (ADDR_TYPE addr : call_addresses)
                 {
                     if (!get_start_block(addr, breakpoints_address_map))//if the addr is not encrypted
                     {
-                        set_breakpoint(pi.hProcess, addr);
+                        set_breakpoint(pi.hProcess, addr+base_address);
                     }
                 }
             }
@@ -112,15 +112,15 @@ int main() {
         if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
             de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP)
         {
-        context.EFlags &= ~0x100;  // Clear the trap flag
-        ADDR_TYPE cur_virtual_address = currentEip - base_address;
-        enc_part_of_block(pi,cur_virtual_address,license.key,file_fields,base_address,breakpoints_address_map);
+            context.EFlags &= ~0x100;  // Clear the trap flag
+            ADDR_TYPE cur_virtual_address = currentEip - base_address;
+            enc_part_of_block(pi, cur_virtual_address, license.key, file_fields, base_address, breakpoints_address_map);
 #if _MODE_64
-        SetThreadContext(pi.hThread, &context);
+            SetThreadContext(pi.hThread, &context);
 #else
-        Wow64SetThreadContext(pi.hThread, &context);
+            Wow64SetThreadContext(pi.hThread, &context);
 #endif
-        continue_status = DBG_CONTINUE;
+            continue_status = DBG_CONTINUE;
         }
         else if (de.dwDebugEventCode == EXCEPTION_DEBUG_EVENT &&
             de.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
@@ -130,10 +130,10 @@ int main() {
 #else
             currentEip = --context.Eip;
 #endif
-   
+
             context.ContextFlags = CONTEXT_CONTROL;
             ADDR_TYPE cur_virtual_address = currentEip - base_address;
-            if (std::find(call_addresses.begin(), call_addresses.end(), cur_virtual_address)!=call_addresses.end())
+            if (std::find(call_addresses.begin(), call_addresses.end(), cur_virtual_address) != call_addresses.end())
             {
                 restore_original_byte(pi.hProcess, currentEip);
                 context.EFlags |= 0x100;  // Clear the trap flag
@@ -148,7 +148,7 @@ int main() {
             {
                 restore_original_byte(pi.hProcess, currentEip);
                 SIZE_T block_size = breakpoints_address_map[cur_virtual_address] - cur_virtual_address;
-                if (!encrypt_block_with_realloction(cur_virtual_address,block_size,pi,license,file_fields,base_address,breakpoints_address_map))
+                if (!encrypt_block_with_realloction(cur_virtual_address, block_size, pi, license, file_fields, base_address, breakpoints_address_map))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
                 }
@@ -156,7 +156,7 @@ int main() {
                 {
                     if (*it > cur_virtual_address and *it < breakpoints_address_map[cur_virtual_address])
                     {
-                        if (!set_breakpoint(pi.hProcess, *it+base_address))
+                        if (!set_breakpoint(pi.hProcess, *it + base_address))
                         {
                             printf("could set breakpint in %p \n", *it);
                         }
@@ -188,9 +188,9 @@ int main() {
 #endif
             context.ContextFlags = CONTEXT_CONTROL;
 #if _MODE_64 == true
-            ADDR_TYPE currentEip = context.Rip-1;
+            ADDR_TYPE currentEip = context.Rip - 1;
 #else
-            ADDR_TYPE currentEip = context.Eip-1;
+            ADDR_TYPE currentEip = context.Eip - 1;
 #endif
         }
 
