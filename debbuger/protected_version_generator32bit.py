@@ -6,7 +6,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import hashlib
 import hmac
-import sys
 dir = ""
 iv = b'\xC2\x40\xEC\xD0\x63\x63\x62\xDF\xBF\xD3\xB8\xF2\x7C\x3B\x80\x02'
 hash_function = hashlib.sha256  # RFC5869 also includes SHA-1 test vectors
@@ -188,7 +187,9 @@ def get_raw_offset(project):
     offset = virtual_start - raw_start
     return offset
 
-def enc_blocks(out_file_name,file_name, blocks):
+def enc_blocks(file_name, blocks):
+    # Copy the original file to create the output file
+    out_file_name = file_name + "_out.exe"
     shutil.copyfile(file_name, out_file_name)
     project = angr.Project(file_name, auto_load_libs=False)
     # Calculate the offset between virtual and raw addresses
@@ -221,13 +222,7 @@ def enc_blocks(out_file_name,file_name, blocks):
     return out_file_name
 
 def write_blocks_file(blocks):
-    # Ensure the directory exists or create it if it doesn't
-    os.makedirs(dir, exist_ok=True)
-
-    # Construct the full file path
-    block_file_name = os.path.join(dir, "blocks_list.bin")
-
-    # Write the blocks to the file
+    block_file_name = dir + "blocks_list.bin"
     with open(block_file_name, 'wb') as block_file:
         for start_address, end_address in blocks:
             start_bytes = start_address.to_bytes(4, byteorder='little', signed=False)
@@ -315,12 +310,32 @@ def get_data_and_rdata_ranges(binary_path):
             ranges.append((section_start-image_base, section_end-image_base))
             print(hex(section_start-image_base))
     return ranges
+def copy_files_to_out(file_paths):
+    """
+    Copies a list of files to an output folder named 'out'.
+    
+    :param file_paths: List of file paths to copy.
+    """
+    output_folder = 'out'
+    
+    # Ensure the output folder exists
+    os.makedirs(output_folder, exist_ok=True)
+    
+    for file_path in file_paths:
+        file_path = file_path.strip()  # Remove any leading/trailing whitespace
+        if file_path:
+            if os.path.isfile(file_path):
+                # Get the base name of the file
+                file_name = os.path.basename(file_path)
+                # Construct the destination path
+                dest_path = os.path.join(output_folder, file_name)
+                # Copy the file
+                shutil.copy2(file_path, dest_path)
+                print(f"Copied {file_path} to {dest_path}")
+            else:
+                print(f"File not found: {file_path}")
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python script.py <path_to_exe>")
-        sys.exit(1)
-    binary_path = sys.argv[1]
-    dir = "out\\"
+    binary_path = dir + "SofwareToDemostrate.exe"
     limit_factor = 1  # Example limit factor
     # Get the address ranges of basic blocks
     reallocation_table = get_relocation_addresses(binary_path)
@@ -330,12 +345,9 @@ if __name__ == "__main__":
     ranges =  filter_blocks_by_relocations(ranges,reallocation_table)
     #ranges+=get_data_and_rdata_ranges(binary_path)
     ranges = sorted(ranges)
-    enc_blocks(dir+binary_path.split("\\")[-1],binary_path, ranges)
+    enc_blocks(binary_path, ranges)
     write_blocks_file(ranges)
     dynmic_jumps = find_dynamic_jumps_calls_32bit(binary_path)
     write_call_address_file(dynmic_jumps)
-    # Print the address ranges
-    print("Basic Block Address Ranges (start, end) [virtual addresses]:")
-    for start, end in ranges:
-        print(f"0x{start:x} - 0x{end:x}")
-    print(len(ranges))
+    file_names = ["SofwareToDemostrate.exe_out.exe","public.pem","License.dat","Actiavtion_Progarm.exe", "blocks_list.bin", "call_address_list.bin"]
+    copy_files_to_out(file_names)
