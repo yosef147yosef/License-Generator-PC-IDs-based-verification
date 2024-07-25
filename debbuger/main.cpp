@@ -69,6 +69,7 @@ int main() {
     std::vector<ADDR_TYPE> call_addresses;
     read_call_addresses_from_binary(CALLS_ADDRESS_FILE_Name, call_addresses);
 
+
     while (TRUE) {
         BYTE l[57];
         SIZE_T t;
@@ -151,6 +152,7 @@ int main() {
                 if (!encrypt_block_with_realloction(cur_virtual_address, block_size, pi, license, file_fields, base_address, breakpoints_address_map))
                 {
                     printf("ERROR encrypt_block_with_realloction \n");
+                    return -1;
                 }
                 for (auto it = call_addresses.begin(); it != call_addresses.end(); ++it)
                 {
@@ -159,6 +161,7 @@ int main() {
                         if (!set_breakpoint(pi.hProcess, *it + base_address))
                         {
                             printf("could set breakpint in %p \n", *it);
+                            return -1;
                         }
                         break;
                     }

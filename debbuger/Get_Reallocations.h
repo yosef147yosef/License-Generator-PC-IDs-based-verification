@@ -29,7 +29,7 @@ struct PEFormat {
     DWORD fileSize;                   ///< Size of the PE file.
     BYTE* buffer;                     ///< Buffer to store the content of the PE file.
     PIMAGE_DOS_HEADER dosHeader;      ///< Pointer to the DOS header of the PE file.
-#ifdef _MODE64
+#if _MODE_64==true
     PIMAGE_NT_HEADERS64 ntHeaders;    ///< Pointer to the NT headers (64-bit) of the PE file.
 #else
     PIMAGE_NT_HEADERS32 ntHeaders;    ///< Pointer to the NT headers (32-bit) of the PE file.
@@ -157,7 +157,7 @@ PEFormat::PEFormat(const char* fileName) {
         return;
     }
 
-#ifdef _MODE64
+#if _MODE_64==true
     ntHeaders = (PIMAGE_NT_HEADERS64)(buffer + dosHeader->e_lfanew);
 #else
     ntHeaders = (PIMAGE_NT_HEADERS32)(buffer + dosHeader->e_lfanew);
@@ -172,7 +172,7 @@ PEFormat::PEFormat(const char* fileName) {
         return;
     }
 
-#ifdef _MODE64
+#if _MODE_64==true
     if (ntHeaders->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
         printf("Not a 64-bit executable\n");
         buffer = NULL;
@@ -239,7 +239,7 @@ PEFormat::PEFormat(const PEFormat& other) {
         if (buffer != NULL) {
             memcpy(buffer, other.buffer, fileSize);
             dosHeader = (PIMAGE_DOS_HEADER)buffer;
-#ifdef _MODE64
+#if _MODE_64==true
             ntHeaders = (PIMAGE_NT_HEADERS64)(buffer + dosHeader->e_lfanew);  ///< Pointer to the NT headers (64-bit) of the PE file.
 #else
             ntHeaders = (PIMAGE_NT_HEADERS32)(buffer + dosHeader->e_lfanew);  ///< Pointer to the NT headers (64-bit) of the PE file.

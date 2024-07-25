@@ -75,8 +75,9 @@ int hkdf(const unsigned char* salt, size_t salt_len,
  * @param byteArray The output byte array.
  */
 void ADDR_TYPEToByteArray(ADDR_TYPE value, BYTE byteArray[]) {
-    for (int i = 0; i < sizeof(ADDR_TYPE); ++i) {
-        byteArray[i] = (BYTE)((value >> (8 * (3 - i))) & 0xFF);
+    for (int i = 0; i < sizeof(ADDR_TYPE); i++) {
+        byteArray[i] = (BYTE)(value & 0xFF);
+        value >>= 8;
     }
 }
 

@@ -116,7 +116,7 @@ ADDR_TYPE get_process_base_address(HANDLE hProcess) {
     DWORD cbNeeded;
     DWORD flags = LIST_MODULES_DEFAULT;
 
-#ifdef _MODE64
+#if _MODE_64==true
     // For 64-bit processes
     if (!EnumProcessModulesEx(hProcess, hMods, sizeof(hMods), &cbNeeded, LIST_MODULES_64BIT)) {
         DWORD error = GetLastError();

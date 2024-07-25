@@ -43,6 +43,8 @@ bool encrypt_block(ADDR_TYPE start_address, SIZE_T size, HANDLE hprocess, BYTE* 
         printf("Can write to the address %p \n", (LPVOID)start_address);
         return false;
     }
+    //print_byte_array_as_hex(cypher, size);
+    //print_byte_array_as_hex(plaintext, size);
     free(cypher);
     free(plaintext);
     return true;
@@ -109,11 +111,14 @@ ADDR_TYPE get_start_block(ADDR_TYPE cur_virtual_address, std::map<ADDR_TYPE,ADDR
  * @param breakpoints_address_map Map of breakpoint addresses.
  * @return true if encryption and reallocation were successful, false otherwise.
  */
-bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, HANDLE hprocess, BYTE* key, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
+
+bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, HANDLE hprocess, BYTE* key, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map, bool enc = false)
 {
     std::vector<ADDR_TYPE> addr_to_reallocate_in_the_block;
     file_fields.AddressesInBlock(start_address+base_address, block_size, addr_to_reallocate_in_the_block);
     ADDR_TYPE reallocate_factor = file_fields.imageBase - base_address;
+    if (enc)
+        reallocate_factor *= -1;
     for (const auto& addr : addr_to_reallocate_in_the_block)
     {
         if (!reallocateAddress(addr, hprocess, reallocate_factor))
@@ -148,7 +153,6 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
             }
         }
     }
-
     return true;
 }
 
@@ -164,7 +168,7 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
  * @param breakpoints_address_map Map of breakpoint addresses.
  * @return true if encryption and reallocation were successful, false otherwise.
  */
-bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, PROCESS_INFORMATION& pi, License license, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map)
+bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, PROCESS_INFORMATION& pi, License license, PEFormat& file_fields, ADDR_TYPE base_address, std::map<ADDR_TYPE, ADDR_TYPE>& breakpoints_address_map , bool enc = false)
 {
     if (!license.verifyLicense())
     {
@@ -175,7 +179,7 @@ bool encrypt_block_with_realloction(ADDR_TYPE start_address, SIZE_T block_size, 
     }
     BYTE key[AES_KEY_LENGTH];
     gen_key(start_address, license, key);
-    return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields,  base_address, breakpoints_address_map);
+    return encrypt_block_with_realloction(start_address, block_size, pi.hProcess, key, file_fields,  base_address, breakpoints_address_map,enc);
 
 }
 
@@ -217,39 +221,4 @@ bool enc_part_of_block(PROCESS_INFORMATION pi, ADDR_TYPE cur_virtual_address, BY
  * @param license License object for verification.
  * @return true if encryption was successful, false otherwise.
  */
-bool enc_data_rdata_sections( PEFormat& file_fields, PROCESS_INFORMATION& pi,ADDR_TYPE base_address, License license)
-{
-    ADDR_TYPE data_section_start = file_fields.dataStartAddress;
-    SIZE_T data_section_end = file_fields.dataEndAddress;
-    ADDR_TYPE rdata_section_start = file_fields.rdataStartAddress;
-    SIZE_T rdata_section_end = file_fields.rdataEndAddress;
-    ADDR_TYPE reallocate_factor = file_fields.imageBase - base_address;
-    for (ADDR_TYPE addr : file_fields.relocationAddresses)
-    {
-        if (addr >= data_section_start and addr < data_section_end or addr >= rdata_section_start and addr < rdata_section_end)
-        {
-            if (!reallocateAddress(addr, pi.hProcess, reallocate_factor))
-            {
-                printf("ERROR couldnt reallocate the address %p \n", addr);
-                return false;
-            }
-        }
-    }
-    if (!license.verifyLicense())
-    {
-        printf("ERROR! the license had being curated \n ");
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        ExitProcess(NULL);
-    }
-    BYTE data_key[AES_KEY_LENGTH];
-    gen_key(data_section_start, license, data_key);   
-    BYTE rdata_key[AES_KEY_LENGTH];
-    gen_key(data_section_start, license, rdata_key);
-    if (!encrypt_block(data_section_start + base_address, data_section_end - data_section_start, pi.hProcess, rdata_key)|| encrypt_block(data_section_start + base_address, data_section_end - data_section_start, pi.hProcess, data_key))
-    {
-        printf("ERROR decrypting data or rdata sections\n ");
-        return false;
-    }
-    return true;
-}
+
