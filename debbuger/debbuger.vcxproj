@@ -24,6 +24,7 @@
     <ProjectGuid>{c7dad21c-96f2-4e78-b536-e4afb4c68773}</ProjectGuid>
     <RootNamespace>debbuger</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Activation_Program</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

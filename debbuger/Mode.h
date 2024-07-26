@@ -1,6 +1,6 @@
 #pragma once
 #define MAX_ADDRESSES 100000
-#define _MODE_64  true
+#define _MODE_64  false
 #if _MODE_64==true
 typedef DWORD64 ADDR_TYPE;
 #else
