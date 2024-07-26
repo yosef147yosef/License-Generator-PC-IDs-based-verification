@@ -14,6 +14,18 @@
 #include <algorithm>
 #include "Key_Gen.h"
 #define MAX_PATH_LENGTH 128
+
+/**
+ * @brief Retrieves the full path of an executable file.
+ *
+ * This function searches for the specified executable file in the system's PATH
+ * and returns its full path. It uses the Windows API function SearchPathA to locate the file.
+ *
+ * @param exe_name The name of the executable file to search for.
+ * @param out_buffer Buffer to store the full path of the executable.
+ * @param buffer_size Size of the output buffer.
+ * @return true if the executable path was found successfully, false otherwise.
+ */
 bool get_exe_path(const char* exe_name, char* out_buffer, size_t buffer_size) {
     if (out_buffer == NULL || buffer_size == 0) {
         fprintf(stderr, "Invalid output buffer\n");
@@ -35,6 +47,16 @@ bool get_exe_path(const char* exe_name, char* out_buffer, size_t buffer_size) {
 
     return true;
 }
+
+
+/**
+ * @brief Main function to handle the creation, suspension, and debugging of a process.
+ *
+ * This function creates a new process in a suspended state, sets breakpoints,
+ * and handles debugging events such as breakpoints and single-step exceptions.
+ *
+ * @return int 0 if successful, 1 if CreateProcessW fails, -1 if encryption fails.
+ */
 int main() {
     License license;
     STARTUPINFOW si = { 0 };
