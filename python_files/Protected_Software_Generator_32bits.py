@@ -1,8 +1,3 @@
-"""
-This script performs various operations on binary files, including encryption,
-key generation, and analysis of executable sections.
-"""
-
 import angr
 import os
 import shutil
@@ -11,15 +6,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import hashlib
 import hmac
+import sys
 dir = ""
 iv = b'\xC2\x40\xEC\xD0\x63\x63\x62\xDF\xBF\xD3\xB8\xF2\x7C\x3B\x80\x02'
 hash_function = hashlib.sha256  # RFC5869 also includes SHA-1 test vectors
-
-"""
-@brief Prints a byte object in hexadecimal format with space separation.
-
-@param byte_obj: The byte object to be printed.
-"""
 def print_hex_format(byte_obj):
     hex_string = byte_obj.hex()
     formatted_hex = ' '.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
@@ -45,25 +35,10 @@ def hkdf_expand(prk: bytes, info: bytes, length: int) -> bytes:
         okm += t
     return okm[:length]
 
-"""
-@brief Implements the HKDF (HMAC-based Key Derivation Function) algorithm.
 
-@param salt: Salt value for HKDF.
-@param ikm: Input keying material.
-@param info: Context and application specific information.
-@param length: Length of the output key material.
-@return: The derived key of specified length.
-"""
 def hkdf(salt: bytes, ikm: bytes, info: bytes, length: int) -> bytes:
     prk = hkdf_extract(salt, ikm)
     return hkdf_expand(prk, info, length)
-
-"""
-@brief Retrieves the addresses of absolute relocations in a binary file.
-
-@param binary_path: Path to the binary file.
-@return: A sorted list of relocation addresses.
-"""
 def get_relocation_addresses(binary_path):
     # Load the binary
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -83,13 +58,7 @@ def get_relocation_addresses(binary_path):
     return sorted(list(relocation_addresses))
 
 
-"""
-@brief Filters out blocks that contain exactly the expected number of relocations.
 
-@param ranges: List of address ranges to filter.
-@param relocation_addresses: List of relocation addresses.
-@return: Filtered list of address ranges.
-"""
 def filter_blocks_by_relocations(ranges, relocation_addresses):
     filtered_ranges = []
     for start, end in ranges:
@@ -101,14 +70,6 @@ def filter_blocks_by_relocations(ranges, relocation_addresses):
         if relocs_in_block < expected_relocs:
             filtered_ranges.append((start, end))
     return filtered_ranges
-
-"""
-@brief Retrieves the address ranges of basic blocks in a binary file.
-
-@param binary_path: Path to the binary file.
-@param limit_factor: Minimum size for a block to be considered.
-@return: List of tuples representing address ranges of basic blocks.
-"""
 def get_basic_block_ranges(binary_path, limit_factor):
     # Create an angr project with the given binary file
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -179,14 +140,6 @@ PC_ID_LENGTH = 32
 AES_KEY_LENGTH = 16
 IV_SIZE = 16  # AES-CTR requires an IV of 16 bytes
 
-
-"""
-@brief Encrypts data using AES-CTR mode.
-
-@param data: The data to be encrypted.
-@param aes_key: The AES key for encryption.
-@return: The encrypted data.
-"""
 def encrypt_data(data, aes_key):
     # Create AES-CTR cipher object
     backend = default_backend()
@@ -199,23 +152,15 @@ def encrypt_data(data, aes_key):
     # Return the encrypted data
     return encrypted_data
 
-
-"""
-@brief Generates a key using HKDF based on the given address and file content.
-
-@param address: The address to use in key generation.
-@param file_name: The name of the file containing necessary data.
-@return: The generated key.
-"""
 def generate_key(address, file_name):
     with open(file_name, 'rb') as file:
-        # Seek to the starting position in the file
-        # Read AES_KEY_LENGTH bytes from the file
         pc_id = file.read(PC_ID_LENGTH)
         key_bytes = file.read(AES_KEY_LENGTH)
-        print_hex_format(key_bytes)
-        print_hex_format(hkdf(address.to_bytes(4),key_bytes, pc_id,AES_KEY_LENGTH))
-        return hkdf(address.to_bytes(4),key_bytes, pc_id,AES_KEY_LENGTH)
+        address_bytes = address.to_bytes(4, byteorder='little')
+        print_hex_format(address_bytes)
+        print_hex_format(hkdf(address_bytes, key_bytes, pc_id, AES_KEY_LENGTH))
+        return hkdf(address_bytes, key_bytes, pc_id, AES_KEY_LENGTH)
+
 
 def get_raw_offset(project):
     """
@@ -243,14 +188,6 @@ def get_raw_offset(project):
     offset = virtual_start - raw_start
     return offset
 
-
-"""
-@brief Encrypts specified blocks in a file and creates a new output file.
-
-@param file_name: Name of the input file.
-@param blocks: List of block ranges to encrypt.
-@return: Name of the output file.
-"""
 def enc_blocks(file_name, blocks):
     # Copy the original file to create the output file
     out_file_name = file_name + "_out.exe"
@@ -295,12 +232,7 @@ def write_blocks_file(blocks):
             block_file.write(start_bytes)
             block_file.write(end_bytes)
 
-"""
-@brief Finds dynamic jumps and calls in a 32-bit executable.
 
-@param exe_path: Path to the executable file.
-@return: List of addresses of dynamic instructions.
-"""
 def find_dynamic_jumps_calls_32bit(exe_path):
     # Load the binary
     project = angr.Project(exe_path, auto_load_libs=False)
@@ -404,25 +336,27 @@ def copy_files_to_out(file_paths):
             else:
                 print(f"File not found: {file_path}")
 
-"""
-Main execution block of the script.
-Performs various operations including block encryption, 
-writing block information, and copying files to an output directory.
-"""
-if __name__ == "__main__":
-    binary_path = dir + "SofwareToDemostrate.exe"
-    limit_factor = 1  # Example limit factor
+def main(argc, argv):
+    if argc < 2 or argc > 3:
+        print("Usage: python your_script.py <binary_path> [<limit_factor>]")
+        return
+
+    binary_path = argv[1]
+    limit_factor = int(argv[2]) if argc == 3 else 10
+
     # Get the address ranges of basic blocks
     reallocation_table = get_relocation_addresses(binary_path)
     for addr in reallocation_table:
         print(addr)
     ranges = get_basic_block_ranges(binary_path, limit_factor)
-    ranges =  filter_blocks_by_relocations(ranges,reallocation_table)
-    #ranges+=get_data_and_rdata_ranges(binary_path)
+    ranges = filter_blocks_by_relocations(ranges, reallocation_table)
     ranges = sorted(ranges)
     enc_blocks(binary_path, ranges)
     write_blocks_file(ranges)
-    dynmic_jumps = find_dynamic_jumps_calls_32bit(binary_path)
-    write_call_address_file(dynmic_jumps)
-    file_names = ["SofwareToDemostrate.exe_out.exe","public.pem","License.dat","Actiavtion_Progarm.exe", "blocks_list.bin", "call_address_list.bin"]
+    dynamic_jumps = find_dynamic_jumps_calls_32bit(binary_path)
+    write_call_address_file(dynamic_jumps)
+    file_names = [binary_path + "_out.exe", "public.pem", "License.dat", "Activation_Program.exe", "blocks_list.bin", "call_address_list.bin"]
     copy_files_to_out(file_names)
+
+if __name__ == "__main__":
+    main(len(sys.argv), sys.argv)
