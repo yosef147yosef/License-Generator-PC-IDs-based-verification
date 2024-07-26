@@ -1,3 +1,8 @@
+"""
+This script performs various operations on binary files, including encryption,
+key generation, and analysis of executable sections.
+"""
+
 import angr
 import os
 import shutil
