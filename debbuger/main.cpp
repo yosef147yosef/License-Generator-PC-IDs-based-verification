@@ -14,7 +14,7 @@
 #include <algorithm>
 #include "Key_Gen.h"
 #define MAX_PATH_LENGTH 128
-
+#define MAX_NAME_LENGTH 64
 /**
  * @brief Retrieves the full path of an executable file.
  *
@@ -47,7 +47,29 @@ bool get_exe_path(const char* exe_name, char* out_buffer, size_t buffer_size) {
 
     return true;
 }
+int find_out_exe_file(char* out_buffer, size_t buffer_size) {
+    WIN32_FIND_DATAW findFileData;
+    HANDLE hFind = FindFirstFileW(L"*_out.exe", &findFileData);
 
+    if (hFind == INVALID_HANDLE_VALUE) {
+        printf("No files found.\n");
+        return -1;
+    }
+    else {
+        do {
+            if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                // Convert wide string to narrow string
+                size_t num_converted;
+                wcstombs_s(&num_converted, out_buffer, buffer_size, findFileData.cFileName, _TRUNCATE);
+                FindClose(hFind);
+                return 0;
+            }
+        } while (FindNextFileW(hFind, &findFileData) != 0);
+
+        FindClose(hFind);
+        return -1;  // No matching file found
+    }
+}
 
 /**
  * @brief Main function to handle the creation, suspension, and debugging of a process.
@@ -62,8 +84,10 @@ int main() {
     STARTUPINFOW si = { 0 };
     PROCESS_INFORMATION pi = { 0 };
     si.cb = sizeof(si);
+    char name[MAX_NAME_LENGTH];
+    find_out_exe_file(name, MAX_NAME_LENGTH);
     char exe_file_name[MAX_PATH_LENGTH];
-    get_exe_path(EXE_FILE_NAME, exe_file_name, sizeof(exe_file_name));
+    get_exe_path(name, exe_file_name, sizeof(exe_file_name));
     printf("%s \n", exe_file_name);
     WCHAR commandLine[MAX_PATH];
     MultiByteToWideChar(CP_ACP, 0, exe_file_name, -1, commandLine, MAX_PATH);
@@ -116,7 +140,7 @@ int main() {
                 {
                     if (!get_start_block(addr, breakpoints_address_map))//if the addr is not encrypted
                     {
-                        set_breakpoint(pi.hProcess, addr+base_address);
+                        set_breakpoint(pi.hProcess, addr + base_address);
                     }
                 }
             }
