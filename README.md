@@ -71,7 +71,7 @@ OS: windows 10 operating system. 32/64-bit Intel architecture
 
 First, the user should generate their own PC ID using the Generate\_PC\_Id.exe file. The file will generate a hex string of fixed size. The user should send their PC ID to the server.
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.006.jpeg)
+![](Pictures/Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.006.jpeg)
 
 
 **Server Side:**
@@ -80,9 +80,9 @@ The server will generate the user's license using the License\_Generator.exe fil
 
 Requirements: The server's private key should be in the same directory as License\_Generator.exe. If not, the file will create a new RSA key pair and will use it to generate the license. It's important that the server's public key is available on the client side to verify the license.	
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.007.jpeg)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.007.jpeg)
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.008.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.008.png)
 
 
 the License is created in the file License.dat.
@@ -91,31 +91,31 @@ Now, we will run the Python code to generate a protected version of the software
 
 For example, if we want to create a protected version of SoftwareToDemonstrate.exe:
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.009.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.009.png)
 
 this software contains a simple snake game. 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.010.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.010.png)
 
 To create a protected version of this game, we should run the protected\_version\_generator32bit.py script in the same directory as the exe file we want to protect. License.dat, get\_exe\_fields.py, Activation\_Program.exe (in the right version), and public.pem (if the server wants to send this to the client as well) should be in the same directory as the Python code. 
 
 Now run the Python script with the name of the file we want to protect. 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.011.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.011.png)
 
 Here, we will run the Python script with the exe file we want to protect and with a limit factor of 5, which is the minimum number of bytes in a block we will encrypt. The default value of this parameter is 10.
 
 After running the Python script, the out folder will be created. 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.012.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.012.png)
 
 The out directory will be sent to the client. 
 
 **Client Side:**
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.013.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.013.png)
 
-This is what the server sends to the client. To activate the SoftwareToDemonstrate.exe\_out.exe file, the client will need to run the Activation\_Program.exe file with all the files in the out directory. ![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.014.png)
+This is what the server sends to the client. To activate the SoftwareToDemonstrate.exe\_out.exe file, the client will need to run the Activation\_Program.exe file with all the files in the out directory. ![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.014.png)
 
 It's important to note that this will only work on the computer that provided its PC ID to the server. 
 
@@ -167,7 +167,7 @@ The product contains two main parts, server program and activation system.
 
 The server system should be installed on the server machine. And needs to be activate with the path to the software you want to protect for each new license you want. The license will get from the user his identifier, and will create protected version of the software, the license, and some supporting files.
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.015.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.015.png)
 
 The server will send all of those to the client, along with the activation file. The client will use the protected version only with the activation system.
 
@@ -298,12 +298,12 @@ Ensure Confidentiality and Prevent Unauthorized Modification: Ensuring the confi
 
 Secure Authentication Mechanisms: Implement robust authentication mechanisms to verify the identity of users accessing the software, ensuring that only authorized individuals can use the program.
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.016.png)![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.017.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.016.png)![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.017.png)
 
 
 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.018.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.018.png)
 #
 # <a name="_toc173014009"></a>Implementation and Development Process
 
@@ -480,7 +480,7 @@ The HKDF process is used to derive unique encryption keys for each block of the 
 
 The Algorithm base on HMAC algorithm. It’s an algorithm that get fixed size key and message and creates pseudorandom fixed size byte string base on the key, the message and hash function. In out implementation we chose sha256 as the hash function. 
 
-![https://www.researchgate.net/publication/346634579/figure/fig2/AS:965112139636738@1607112073858/Hash-Message-Authentication-Code-HMAC-process-332-Overview-of-SHA-256-SHA-256_W640.jpg](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.019.jpeg)
+![https://www.researchgate.net/publication/346634579/figure/fig2/AS:965112139636738@1607112073858/Hash-Message-Authentication-Code-HMAC-process-332-Overview-of-SHA-256-SHA-256_W640.jpg](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.019.jpeg)
 
 
 
@@ -491,7 +491,7 @@ The Algorithm base on HMAC algorithm. It’s an algorithm that get fixed size ke
 
 Here’s the code for the HMAC in python. 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.020.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.020.png)
 
 The HKDF contains two steps, each one uses the hmac algorithm:
 
@@ -499,17 +499,17 @@ Extract step: This step produces a pseudorandom key (PRK) from the input key mat
 
 Here’s the python code for this part: 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.021.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.021.png)
 
 Expand step: This step expands the PRK into output key material (OKM) of the required length, incorporating additional context-specific information (info argument). In our case, this will be the machine’s PC [10] (this will be generated ounce in the machine itself (not taking it from the license, so the code will work only on one machine, the one that the license was generated for)).
 
 Here’s the python code of this part: 
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.022.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.022.png)
 
 Here’s the python code of the combined HKDF
 
-![](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.023.png)
+![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.023.png)
 
 Our implementation of HKDF uses the following parameters:
 
@@ -543,7 +543,7 @@ In CTR mode, a counter is encrypted and then XORed with the plaintext to produce
 
 The key will be HKDF algorithm result. 
 
-![AES in CTR mode of operation. | Download Scientific Diagram](Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.024.png)
+![AES in CTR mode of operation. | Download Scientific Diagram](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.024.png)
 
 Angr Package and Its Use in the Project
 
