@@ -11,7 +11,7 @@ OS: windows 10 operating system. 32/64-bit Intel architecture
 
 First, the user should generate their own PC ID using the Generate\_PC\_Id.exe file. The file will generate a hex string of fixed size. The user should send their PC ID to the server.
 
-![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.004.jpeg)
+![](user%20guide/Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.004.jpeg)
 
 
 **Server Side:**
