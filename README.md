@@ -11,7 +11,7 @@ OS: windows 10 operating system. 32/64-bit Intel architecture
 
 First, the user should generate their own PC ID using the Generate\_PC\_Id.exe file. The file will generate a hex string of fixed size. The user should send their PC ID to the server.
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.004.jpeg)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.004.jpeg)
 
 
 **Server Side:**
@@ -20,7 +20,7 @@ The server will generate the user's license using the License\_Generator.exe fil
 
 Requirements: The server's private key should be in the same directory as License\_Generator.exe. If not, the file will create a new RSA key pair and will use it to generate the license. It's important that the server's public key is available on the client side to verify the license.	
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.005.jpeg)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.005.jpeg)
 
 ![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.006.png)
 
@@ -31,31 +31,31 @@ Now, we will run the Python code to generate a protected version of the software
 
 For example, if we want to create a protected version of SoftwareToDemonstrate.exe:
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.007.png)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.007.png)
 
 this software contains a simple snake game. 
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.008.png)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.008.png)
 
 To create a protected version of this game, we should run the protected\_version\_generator32bit.py script in the same directory as the exe file we want to protect. License.dat, get\_exe\_fields.py, Activation\_Program.exe (in the right version), and public.pem (if the server wants to send this to the client as well) should be in the same directory as the Python code. 
 
 Now run the Python script with the name of the file we want to protect. 
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.009.png)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.009.png)
 
 Here, we will run the Python script with the exe file we want to protect and with a limit factor of 5, which is the minimum number of bytes in a block we will encrypt. The default value of this parameter is 10.
 
 After running the Python script, the out folder will be created. 
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.010.png)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.010.png)
 
 The out directory will be sent to the client. 
 
 **Client Side:**
 
-![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.011.png)
+![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.011.png)
 
-This is what the server sends to the client. To activate the SoftwareToDemonstrate.exe\_out.exe file, the client will need to run the Activation\_Program.exe file with all the files in the out directory. ![](Aspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.012.png)
+This is what the server sends to the client. To activate the SoftwareToDemonstrate.exe\_out.exe file, the client will need to run the Activation\_Program.exe file with all the files in the out directory. ![](user%20guideAspose.Words.f3a901f7-90fb-4b79-adad-4d45856fd7e6.012.png)
 
 It's important to note that this will only work on the computer that provided its PC ID to the server. 
 
