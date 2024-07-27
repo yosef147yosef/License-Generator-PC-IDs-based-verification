@@ -6,24 +6,65 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import hashlib
 import hmac
+
 dir = ""
 iv = b'\xC2\x40\xEC\xD0\x63\x63\x62\xDF\xBF\xD3\xB8\xF2\x7C\x3B\x80\x02'
 hash_function = hashlib.sha256  # RFC5869 also includes SHA-1 test vectors
+
+"""
+ * @brief Prints a byte object in hexadecimal format.
+ *
+ * This function takes a byte object and prints it as a formatted hexadecimal string,
+ * with spaces between each pair of characters.
+ *
+ * @param byte_obj The byte object to be printed in hexadecimal format.
+"""
 def print_hex_format(byte_obj):
     hex_string = byte_obj.hex()
     formatted_hex = ' '.join(hex_string[i:i+2] for i in range(0, len(hex_string), 2))
     print(formatted_hex)
 
+
+"""
+ * @brief Computes the HMAC digest of the given key and data.
+ *
+ * This function calculates the HMAC (Hash-based Message Authentication Code) digest
+ * using the specified key and data, with the global hash function.
+ *
+ * @param key The key used for HMAC computation.
+ * @param data The data to be authenticated.
+ * @return The computed HMAC digest.
+"""
 def hmac_digest(key: bytes, data: bytes) -> bytes:
     return hmac.new(key, data, hash_function).digest()
 
 
+"""
+ * @brief Performs the HKDF extract step.
+ *
+ * This function implements the extract step of HKDF (HMAC-based Key Derivation Function)
+ * as defined in RFC 5869. It derives a pseudorandom key from the input key material and salt.
+ *
+ * @param salt The salt value (a non-secret random value).
+ * @param ikm The input keying material.
+ * @return The extracted pseudorandom key.
+"""
 def hkdf_extract(salt: bytes, ikm: bytes) -> bytes:
     if len(salt) == 0:
         salt = bytes([0] * hash_function().digest_size)
     return hmac_digest(salt, ikm)
 
-
+"""
+ * @brief Performs the HKDF expand step.
+ *
+ * This function implements the expand step of HKDF (HMAC-based Key Derivation Function)
+ * as defined in RFC 5869. It expands the pseudorandom key to the desired length.
+ *
+ * @param prk The pseudorandom key.
+ * @param info Optional context and application specific information.
+ * @param length The length of the output keying material in bytes.
+ * @return The output keying material.
+"""
 def hkdf_expand(prk: bytes, info: bytes, length: int) -> bytes:
     t = b""
     okm = b""
@@ -34,10 +75,31 @@ def hkdf_expand(prk: bytes, info: bytes, length: int) -> bytes:
         okm += t
     return okm[:length]
 
-
+"""
+ * @brief Performs the complete HKDF key derivation.
+ *
+ * This function combines the extract and expand steps of HKDF to derive a key
+ * from the given inputs.
+ *
+ * @param salt The salt value (a non-secret random value).
+ * @param ikm The input keying material.
+ * @param info Optional context and application specific information.
+ * @param length The length of the output keying material in bytes.
+ * @return The derived key.
+"""
 def hkdf(salt: bytes, ikm: bytes, info: bytes, length: int) -> bytes:
     prk = hkdf_extract(salt, ikm)
     return hkdf_expand(prk, info, length)
+
+"""
+ * @brief Retrieves relocation addresses from a binary file.
+ *
+ * This function uses the angr library to analyze a binary file and extract
+ * the addresses of absolute relocations.
+ *
+ * @param binary_path The path to the binary file.
+ * @return A sorted list of relocation addresses.
+"""
 def get_relocation_addresses(binary_path):
     # Load the binary
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -57,7 +119,16 @@ def get_relocation_addresses(binary_path):
     return sorted(list(relocation_addresses))
 
 
-
+"""
+ * @brief Filters basic block ranges based on relocation addresses.
+ *
+ * This function takes a list of address ranges and a list of relocation addresses,
+ * and filters out blocks that contain exactly the expected number of relocations.
+ *
+ * @param ranges A list of address ranges (start, end) representing basic blocks.
+ * @param relocation_addresses A list of relocation addresses.
+ * @return A filtered list of address ranges.
+"""
 def filter_blocks_by_relocations(ranges, relocation_addresses):
     filtered_ranges = []
     for start, end in ranges:
@@ -69,6 +140,17 @@ def filter_blocks_by_relocations(ranges, relocation_addresses):
         if relocs_in_block < expected_relocs:
             filtered_ranges.append((start, end))
     return filtered_ranges
+
+"""
+ * @brief Retrieves basic block address ranges from a binary file.
+ *
+ * This function uses angr to analyze a binary file and extract the address ranges
+ * of basic blocks, considering jump targets and a size limit factor.
+ *
+ * @param binary_path The path to the binary file.
+ * @param limit_factor The minimum size for a block to be included.
+ * @return A list of address ranges (start, end) for basic blocks.
+"""
 def get_basic_block_ranges(binary_path, limit_factor):
     # Create an angr project with the given binary file
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -114,6 +196,15 @@ def get_basic_block_ranges(binary_path, limit_factor):
 
     return address_ranges
 
+"""
+ * @brief Disassembles and prints basic blocks from a binary file.
+ *
+ * This function uses angr to disassemble a binary file and print the instructions
+ * of basic blocks that meet a certain size threshold.
+ *
+ * @param binary_path The path to the binary file.
+ * @param limit_factor The minimum size for a block to be disassembled and printed.
+"""
 def disassemble_and_print_blocks(binary_path, limit_factor):
     # Create an angr project with the given binary file
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -139,6 +230,15 @@ PC_ID_LENGTH = 32
 AES_KEY_LENGTH = 16
 IV_SIZE = 16  # AES-CTR requires an IV of 16 bytes
 
+"""
+ * @brief Encrypts data using AES-CTR mode.
+ *
+ * This function encrypts the given data using AES in CTR mode with the provided key.
+ *
+ * @param data The data to be encrypted.
+ * @param aes_key The AES key for encryption.
+ * @return The encrypted data.
+"""
 def encrypt_data(data, aes_key):
     # Create AES-CTR cipher object
     backend = default_backend()
@@ -151,6 +251,16 @@ def encrypt_data(data, aes_key):
     # Return the encrypted data
     return encrypted_data
 
+"""
+ * @brief Generates a key using HKDF.
+ *
+ * This function reads data from a file and uses HKDF to generate a key
+ * based on the given address and file contents.
+ *
+ * @param address The address used in key generation.
+ * @param file_name The name of the file containing key generation data.
+ * @return The generated key.
+"""
 def generate_key(address, file_name):
     with open(file_name, 'rb') as file:
         pc_id = file.read(PC_ID_LENGTH)
@@ -160,7 +270,15 @@ def generate_key(address, file_name):
         print_hex_format(hkdf(address_bytes, key_bytes, pc_id, AES_KEY_LENGTH))
         return hkdf(address_bytes, key_bytes, pc_id, AES_KEY_LENGTH)
 
-
+"""
+ * @brief Calculates the raw offset between virtual and raw addresses for the text section.
+ *
+ * This function analyzes the binary using angr to determine the offset between
+ * virtual and raw addresses in the text section.
+ *
+ * @param project An angr Project object representing the binary.
+ * @return The offset between virtual and raw addresses.
+"""
 def get_raw_offset(project):
     """
     Get the raw offset between virtual and raw addresses for the text section.
@@ -187,6 +305,16 @@ def get_raw_offset(project):
     offset = virtual_start - raw_start
     return offset
 
+"""
+ * @brief Encrypts specified blocks in a binary file.
+ *
+ * This function creates an encrypted version of the input file by encrypting
+ * specified blocks while leaving the rest of the file unchanged.
+ *
+ * @param file_name The name of the input binary file.
+ * @param blocks A list of address ranges to be encrypted.
+ * @return The name of the output encrypted file.
+"""
 def enc_blocks(file_name, blocks):
     # Copy the original file to create the output file
     out_file_name = file_name + "_out.exe"
@@ -221,6 +349,13 @@ def enc_blocks(file_name, blocks):
             out_file.write(read_file.read(remaining_size))
     return out_file_name
 
+"""
+ * @brief Writes block information to a binary file.
+ *
+ * This function takes a list of block address ranges and writes them to a binary file.
+ *
+ * @param blocks A list of address ranges (start, end) representing blocks.
+"""
 def write_blocks_file(blocks):
     block_file_name = dir + "blocks_list.bin"
     with open(block_file_name, 'wb') as block_file:
@@ -231,7 +366,15 @@ def write_blocks_file(blocks):
             block_file.write(start_bytes)
             block_file.write(end_bytes)
 
-
+"""
+ * @brief Finds dynamic jumps and calls in a 32-bit executable.
+ *
+ * This function analyzes a 32-bit executable to identify instructions that perform
+ * dynamic jumps or calls (i.e., those using registers or memory references).
+ *
+ * @param exe_path The path to the executable file.
+ * @return A list of addresses of instructions performing dynamic jumps or calls.
+"""
 def find_dynamic_jumps_calls_32bit(exe_path):
     # Load the binary
     project = angr.Project(exe_path, auto_load_libs=False)
@@ -284,6 +427,14 @@ def find_dynamic_jumps_calls_32bit(exe_path):
                             dynamic_instructions.append(instruction.address - image_base)
 
     return dynamic_instructions
+
+"""
+ * @brief Writes a list of call addresses to a binary file.
+ *
+ * This function takes a list of addresses and writes them to a binary file.
+ *
+ * @param addresses A list of call addresses to be written.
+"""
 def write_call_address_file(addresses):
     block_file_name = dir+"call_address_list.bin"
     with open(block_file_name, 'wb') as block_file:
@@ -293,6 +444,15 @@ def write_call_address_file(addresses):
             block_file.write(tmp)
 
 
+"""
+ * @brief Retrieves address ranges for .data and .rdata sections.
+ *
+ * This function analyzes a binary file to find the address ranges of
+ * .data and .rdata sections.
+ *
+ * @param binary_path The path to the binary file.
+ * @return A list of address ranges for .data and .rdata sections.
+"""
 def get_data_and_rdata_ranges(binary_path):
     # Create an angr project with the given binary file
     project = angr.Project(binary_path, auto_load_libs=False)
@@ -310,6 +470,14 @@ def get_data_and_rdata_ranges(binary_path):
             ranges.append((section_start-image_base, section_end-image_base))
             print(hex(section_start-image_base))
     return ranges
+
+"""
+ * @brief Copies a list of files to an output folder.
+ *
+ * This function creates an 'out' folder and copies the specified files into it.
+ *
+ * @param file_paths A list of file paths to be copied.
+"""
 def copy_files_to_out(file_paths):
     """
     Copies a list of files to an output folder named 'out'.
@@ -334,6 +502,8 @@ def copy_files_to_out(file_paths):
                 print(f"Copied {file_path} to {dest_path}")
             else:
                 print(f"File not found: {file_path}")
+
+
 if __name__ == "__main__":
     binary_path = dir + "SofwareToDemostrate.exe"
     limit_factor = 1  # Example limit factor
