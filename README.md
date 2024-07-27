@@ -1,7 +1,7 @@
-#Project: License Generator & PC IDs based verification
-#Authors:	Yossef Halevi and Shmouel Hai Illouz Instructor:	Arie Haenel
-#Faculty:	Computer Science
-#Institution:	JCT
+# Project: License Generator & PC IDs based verification
+# Authors:	Yossef Halevi and Shmouel Hai Illouz Instructor:	Arie Haenel
+# Faculty:	Computer Science
+# Institution:	JCT
 
 
 # <a name="_toc173013999"></a>Abstract
