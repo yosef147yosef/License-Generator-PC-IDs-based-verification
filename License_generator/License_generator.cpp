@@ -3,11 +3,32 @@
 #include "sizes.h"
 #include <Windows.h>
 #include <stdio.h>
+
+/**
+ * @brief Prints a byte array as hexadecimal values.
+ *
+ * This function takes a byte array and its size, then prints each byte as a two-digit hexadecimal value.
+ *
+ * @param array Pointer to the byte array to be printed.
+ * @param size Size of the byte array.
+ */
 void print_byte_array_as_hex(BYTE* array, SIZE_T size) {
     for (SIZE_T i = 0; i < size; i++) {
         printf("%02X", array[i]);
     }
 }
+
+/**
+ * @brief Converts a hexadecimal string to a byte array.
+ *
+ * This function takes a hexadecimal string and converts it to a byte array.
+ * It assumes that each byte is represented by two hexadecimal characters.
+ *
+ * @param hex_string The input hexadecimal string.
+ * @param len Length of the hexadecimal string.
+ * @param output Pointer to the output byte array.
+ * @return The number of bytes written to the output array, or 0 if an error occurred.
+ */
 SIZE_T hex_string_to_bytes(const char* hex_string, SIZE_T len ,  BYTE* output) {
     if (len % 2 != 0) {
         fprintf(stderr, "Hex string length must be even.\n");
@@ -21,7 +42,16 @@ SIZE_T hex_string_to_bytes(const char* hex_string, SIZE_T len ,  BYTE* output) {
     return byte_count;
 }
 
-
+/**
+ * @brief Main function for the license generation program.
+ *
+ * This function handles the command-line arguments, creates a License object,
+ * signs the license, and generates the license file.
+ *
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line argument strings.
+ * @return 0 if successful, 1 if there's an error in arguments.
+ */
 int main(int argc, char* argv[]) {
 
     if (argc < 2)
