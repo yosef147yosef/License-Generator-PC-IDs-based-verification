@@ -1,0 +1,6 @@
+Example - contain exe file for example, with the output for my computer. 
+Get_PC_ID - return the pc id, the input for License_generator
+License_Generator - input - pc id, output -- singed license (requre rsa pair key, if you dont have one it will create for you)
+Get Protected sofware.py\32\64 bit  - (have to be with the same dir as the License.dat , and the sofware_to demostrea) create proteced version and put all the thing to send to the client in out dir
+Activation_Program_32_version.pyc- python script file to activate any protected file with _out.exe extantion. need to be in the same diractory as the proteced exe.
+Activation_Program_64_version.pyc - python script file the same for 64 bit exe protected version
