@@ -608,7 +608,7 @@ The reason that single-step mode was not set for all the instructions in the cod
 
 Our system consists of five main components:
 
-1. Protected (encrypted) software - identical for all users
+1. Protected (encrypted) software - unique for each user
 1. Activation program - identical for all users
 1. License file - unique for each user
 1. Block ranges file - identical for all users
