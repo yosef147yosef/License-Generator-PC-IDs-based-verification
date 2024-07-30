@@ -98,7 +98,7 @@ this software contains a simple snake game.
 ![](Pictures/Aspose.Words.5e7e1f61-56a8-4d15-af55-145ff7cd51b6.010.png)
 
 
-To create a protected version of this game, we should run the Protected\_Software\_Generator\_32bits.pyc script in the same directory as the exe file we want to protect. License.dat, Activation_Program.exe (in the right version), and public.pem (if the server wants to send this to the client as well) should be in the same directory as the Python code. 
+To create a protected version of this game, we should run the Protected\_Software\_Generator\_32bits.py script in the same directory as the exe file we want to protect. License.dat, Activation_Program.exe (in the right version), and public.pem (if the server wants to send this to the client as well) should be in the same directory as the Python code. 
 
 Now run the Python script with the name of the file we want to protect. 
 
