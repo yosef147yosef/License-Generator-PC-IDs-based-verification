@@ -47,6 +47,17 @@ bool get_exe_path(const char* exe_name, char* out_buffer, size_t buffer_size) {
 
     return true;
 }
+
+/**
+ * @brief Finds an executable file with "_out.exe" suffix in the current directory.
+ *
+ * This function searches for the first file in the current directory that ends with "_out.exe".
+ * If found, it stores the filename in the provided buffer.
+ *
+ * @param out_buffer The buffer to store the found filename.
+ * @param buffer_size The size of the out_buffer.
+ * @return 0 if a file is found, -1 if no file is found or an error occurs.
+ */
 int find_out_exe_file(char* out_buffer, size_t buffer_size) {
     WIN32_FIND_DATAW findFileData;
     HANDLE hFind = FindFirstFileW(L"*_out.exe", &findFileData);
