@@ -1,0 +1,6 @@
+1. The activation program now detect file with "_out.exe" extinction and activate it, so you dont need to recompile it for each exe file you want to activate. 
+2. few major changes in the activation program (problems with the reallocation)
+3. Now the python scripts put all the files to send to the client in out directory so it is easier to know what to send to the client. 
+4. the python script get the name of the file to protected as cmd paratmer. and he get the factor limit as well with deffult value of 10. 
+5. few changes of the final report. including adding graphs to describe the keys generation process. And more correction. 
+6. organize the files nicely in git, and adding readme files.
